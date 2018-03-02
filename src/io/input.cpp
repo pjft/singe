@@ -124,18 +124,30 @@ int g_key_defs[SWITCH_COUNT][2] =
 #ifndef GP2X
 // added by Russ
 // global button mapping array. just hardcoded room for 10 buttons max
-int joystick_buttons_map[10] = {
-	SWITCH_BUTTON1,	// button 1
-	SWITCH_BUTTON2,	// button 2
-	SWITCH_BUTTON3,	// button 3
-	SWITCH_BUTTON1,	// button 4
-	SWITCH_COIN1,		// button 5
-	SWITCH_START1,		// button 6
-	SWITCH_BUTTON1,	// button 7
-	SWITCH_BUTTON1,	// button 8
-	SWITCH_BUTTON1,	// button 9
-	SWITCH_BUTTON1,	// button 10
+// not a fixed system dont initialize button functions unless its 
+// from dapinput.sh
+
+int joystick_buttons_map[18] = {
+	-1,	// button 0
+	-1,	// button 1
+	-1,	// button 2
+	-1,	// button 3
+	-1,	// button 4
+	-1,	// button 5
+	-1,	// button 6
+	-1,	// button 7
+	-1,	// button 8
+	-1,	// button 9
+	-1,	// button 10
+	-1,	// button 11
+	-1,	// button 12
+	-1,	// button 13
+	-1,	// button 14
+	-1,	// button 15
+	-1,	// button 16
+	-1	// button 17
 };
+
 #else
 // button mapping for gp2x
 int joystick_buttons_map[18] =
@@ -194,6 +206,7 @@ void CFG_Keys()
 	string cur_line = "";
 	string key_name = "", sval1 = "", sval2 = "", sval3 = "", eq_sign = "";
 	int val1 = 0, val2 = 0, val3 = 0;
+
 	string keyinput_notice;
 
 	if (m_altInputFileSet) {
@@ -207,6 +220,8 @@ void CFG_Keys()
 
 	// find where the keymap ini file is (if the file doesn't exist, this string will be empty)
 	string strDapInput = g_homedir.find_file(g_inputini_file.c_str(), true);
+
+	int max_buttons = (int) (sizeof(joystick_buttons_map) / sizeof(int));
 	io = mpo_open(strDapInput.c_str(), MPO_OPEN_READONLY);
 	if (io)
 	{
@@ -262,7 +277,11 @@ void CFG_Keys()
 											g_key_defs[i][1] = val2;
 
 											// if zero then no mapping necessary, just use default, if any
-											if (val3 > 0) joystick_buttons_map[val3 - 1] = i;
+											if ( val3 -1  < max_buttons)
+											{
+												if (val3 > 0 ) joystick_buttons_map[val3 - 1] = i;
+											}
+											else printf("sorry we only support %d joystick buttons we could not map button %d please check your dapinput.ini\n",max_buttons, val3 - 1 );
 											found_match = true;
 											break;
 										}
@@ -899,7 +918,7 @@ void process_joystick_motion(SDL_Event *event)
 	} // end verticle axis
 
 	// horizontal axis
-	else
+	else if (event->jaxis.axis == 0)
 	{
 		// if they're moving right
 		if (event->jaxis.value > JOY_AXIS_MID)
