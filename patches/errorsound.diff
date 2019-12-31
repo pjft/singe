@@ -1,0 +1,53 @@
+diff --git a/src/io/error.cpp b/src/io/error.cpp
+index f38c013..bb9c7f9 100644
+--- a/src/io/error.cpp
++++ b/src/io/error.cpp
+@@ -80,10 +80,10 @@ void printerror(const char *s)
+ 		vid_flip();
+ 
+ 		// play a 'save me' sound if we've got sound		
+-		//if (get_sound_initialized())
+-		//{
+-		//	sound_play_saveme();
+-		//}
++		if (get_sound_initialized())
++		{
++			sound_play_saveme();
++		}
+ 		
+ 		con_getkey();	// wait for keypress
+ 
+diff --git a/src/sound/sound.cpp b/src/sound/sound.cpp
+index bf01bac..187cc8d 100644
+--- a/src/sound/sound.cpp
++++ b/src/sound/sound.cpp
+@@ -164,6 +164,8 @@ bool sound_init()
+ 					(specObtained.callback == audio_callback))
+ 				{
+ 					// if we can load all our waves, we're set
++					 if (load_waves())
++					 {
+ 					
+ 						// If we are supposed to start without playing any sound, then set muted bool here.
+ 						// It must come here because add_soundchip (which comes right afterwards) will set the sound mixing callback.
+@@ -190,6 +192,7 @@ bool sound_init()
+ 							// reset memory allocations
+ 							set_soundbuf_size(specObtained.samples);
+ 						}
++					}
+ 
+ 						result = true;
+ 						g_sound_initialized = true;
+                                                g_sound_initialized = true;
+@@ -319,9 +322,9 @@
+        }
+ 
+        // load "saveme" sound in
+-       if (!SDL_LoadWAV("sound/saveme.wav", &spec, &g_sample_saveme.pu8Buf, &g_sample_saveme.uLength))
++       if (!SDL_LoadWAV("sound/grumble.wav", &spec, &g_sample_saveme.pu8Buf, &g_sample_saveme.uLength))
+        {
+-               printline("Loading 'saveme.wav' failed...");
++               printline("Loading 'grumble.wav' failed...");
+                result = 0;
+        }
+

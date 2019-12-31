@@ -1,0 +1,1795 @@
+diff -ru ../../daphne/src/game/game.cpp game/game.cpp
+--- ../../daphne/src/game/game.cpp	2019-12-18 16:46:46.967478506 +0000
++++ game/game.cpp	2019-12-19 15:42:01.404344139 +0000
+@@ -44,10 +44,10 @@
+ #include "../io/mpo_mem.h"	// for better malloc
+ #include "../io/numstr.h"
+ #include "../ldp-out/ldp.h"
+-#include "../cpu/cpu-debug.h"	// for set_cpu_trace
++//#include "../cpu/cpu-debug.h"	// for set_cpu_trace
+ #include "../timer/timer.h"
+ #include "../io/input.h"
+-#include "../io/sram.h"
++//#include "../io/sram.h"
+ #include "../io/logger_console.h"	// for writing to daphne_log.txt file
+ #include "../video/video.h"	// for get_screen
+ #include "../video/palette.h"
+@@ -88,7 +88,7 @@
+ 	}
+ 
+ #ifdef CPU_DEBUG
+-	set_cpu_trace(1);
++//	set_cpu_trace(1);
+ #else
+ 	printline("You have to compile with CPU_DEBUG defined to use the debugger!");
+ #endif
+@@ -126,6 +126,8 @@
+ //	m_disc_ms_per_frame = 0.0;
+ 	m_game_type = GAME_UNDEFINED;
+ 	m_game_issues = NULL;	// assume game has no issues unless we specify some
++	m_miceDetected = -1;
++	m_bPauseKeyEnabled = true;
+ #ifdef CPU_DEBUG
+ 	addr_names = game_addr_names;
+ #endif
+@@ -161,10 +163,11 @@
+ 	{
+ 		m_uDiscFPKS = (unsigned int) ((m_disc_fps * 1000.0) + 0.5);	// frames per kilosecond (same precision, but an int instead of a float)
+ 	}
+-
++/*
+ 	// if we have nvram that we need to load
+ 	if (m_nvram_size > 0)
+ 	{	
++		
+ 		if (m_EEPROM_9536)
+ 		{
+ 			string filename = m_nvram_filename;
+@@ -178,7 +181,7 @@
+ 			sram_load(filename.c_str(), m_nvram_begin, m_nvram_size);
+ 		}
+ 	}
+-	
++	*/
+ 	return init();
+ }
+ 
+@@ -187,14 +190,14 @@
+ {
+ 	bool result = true;
+ 	
+-	cpu_init();
++//	cpu_init();
+ 	return result;
+ }
+ 
+ // generic game start function.  Starts the game playing (usually just begins executing the cpu(s) )
+ void game::start()
+ {
+-	cpu_execute();
++//	cpu_execute();
+ }
+ 
+ // call this instead of shutdown directly
+@@ -207,6 +210,7 @@
+ // called to ensure sram is saved even if Daphne is terminated improperly
+ void game::save_sram()
+ {
++	/*
+ 	// if we have nvram that we need to save to disk
+ 	if (m_nvram_size > 0)
+ 	{
+@@ -222,19 +226,19 @@
+             filename += ".gz";      // trail w/ gz since it'll be compressed 
+ 			sram_save(filename.c_str(), m_nvram_begin, m_nvram_size);
+ 		}
+-	}
++	} */
+ }
+ 
+ // generic game shutdown function
+ void game::shutdown()
+ {
+-	cpu_shutdown();
++//	cpu_shutdown();
+ }
+ 
+ // generic game reset function
+ void game::reset()
+ {
+-	cpu_reset();
++//	cpu_reset();
+ }
+ 
+ // does anything special needed to send an IRQ
+@@ -257,25 +261,27 @@
+ // reads a byte from a 16-bit address space
+ Uint8 game::cpu_mem_read(Uint16 addr)
+ {
+-	return m_cpumem[addr];
++//	return m_cpumem[addr];
++	return 0;
+ }
+ 
+ // reads a byte from a 32-bit address space
+ Uint8 game::cpu_mem_read(Uint32 addr)
+ {
+-	return m_cpumem[addr];
++//	return m_cpumem[addr];
++	return 0;
+ }
+ 
+ // writes a byte to a 16-bit addresss space
+ void game::cpu_mem_write(Uint16 addr, Uint8 value)
+ {
+-	m_cpumem[addr] = value;
++//	m_cpumem[addr] = value;
+ }
+ 
+ // writes a byte to a 32-bit address space
+ void game::cpu_mem_write(Uint32 addr, Uint8 value)
+ {
+-	m_cpumem[addr] = value;
++//	m_cpumem[addr] = value;
+ }
+ 
+ // reads a byte from the cpu's port
+@@ -310,7 +316,7 @@
+ 	}
+ }
+ 
+-void game::input_enable(Uint8 input)
++void game::input_enable(Uint8 input, int mouseID)
+ {
+ 	// get rid of warnings
+ 	if (input)
+@@ -320,7 +326,7 @@
+ 	printline("Warning: generic input_enable function called, does nothing");
+ }
+ 
+-void game::input_disable(Uint8 input)
++void game::input_disable(Uint8 input, int mouseID)
+ {
+ 	// get rid of warnings
+ 	if (input)
+@@ -331,7 +337,7 @@
+ }
+ 
+ // Added by ScottD
+-void game::OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel)
++void game::OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID)
+ {
+ 	// get rid of warnings
+ 	if (x || y || xrel || yrel)
+@@ -825,16 +831,18 @@
+ 
+ // returns true if the file in question exists, and has the proper CRC32
+ // 'gamedir' is which rom directory (or .ZIP file) this file is expected to be in
+-bool game::verify_required_file(const char *filename, const char *gamedir, Uint32 filecrc32)
++bool game::verify_required_file2(const char *filename, const char *gamedir, Uint32 filecrc32)
+ {
+ 	Uint8 *readme_test = NULL;
+ 	bool passed_test = false;
+-	string path = gamedir;
++	string path = "/";
++	path += gamedir;
+ 	path += "/";
+ 	path += filename;
+ 	
+ 	// TRY UNCOMPRESSED FIRST
+-	string uncompressed_path = g_homedir.get_romfile(path);
++	string uncompressed_path = g_homedir.get_homedir();
++	uncompressed_path.append(path);
+ 
+ 	struct mpo_io *io;
+ 
+@@ -855,7 +863,13 @@
+ 			crc = crc32(crc, readme_test, io->size);
+ 			
+ 			// if the required file has been unaltered, allow user to continue
+-			if (crc == filecrc32)
++			
++			//char s1[255];
++			//sprintf(s1,"CRC returns %d",crc);
++			//printline(s1);
++			// commenting this for now... --RDG
++
++			//if (crc == filecrc32)
+ 			{
+ 				passed_test = true;
+ 			}
+@@ -866,41 +880,6 @@
+ 
+ 		mpo_close(io);
+ 	}
+-
+-	// IF UNCOMPRESSED TEST FAILED, TRY COMPRESSED TEST ...
+-	if (!passed_test)
+-	{
+-		string zip_path = gamedir;
+-		zip_path += ".zip";  // we now have "/gamename.zip"
+-		zip_path = g_homedir.get_romfile(zip_path);
+-
+-		unzFile zip_file = NULL;	// pointer to open zip file (NULL if file is closed)
+-		zip_file = unzOpen(zip_path.c_str());
+-		if (zip_file)
+-		{
+-			if (unzLocateFile(zip_file, filename, 2) == UNZ_OK)
+-			{
+-				unz_file_info info;
+-
+-				// get CRC
+-				unzGetCurrentFileInfo OF((zip_file,
+-					     &info,
+-					     NULL,
+-					     0,
+-					     NULL,
+-					     0,
+-					     NULL,
+-					     0));
+-
+-				if (info.crc == filecrc32)
+-				{
+-					passed_test = true;
+-				}
+-			}
+-			unzClose(zip_file);
+-		}
+-	}
+-
+ 	return passed_test;
+ }
+ 
+@@ -1124,7 +1103,7 @@
+ 	// if the game is already paused ...
+ 	if (m_game_paused)
+ 	{
+-		cpu_unpause();
++//		cpu_unpause();
+ 		g_ldp->pre_play();
+ 		m_game_paused = false;
+ 	}
+@@ -1135,7 +1114,7 @@
+ //		char frame[6];
+ //		Uint16 cur_frame = g_ldp->get_current_frame();
+ 
+-		cpu_pause();
++//		cpu_pause();
+ 		g_ldp->pre_pause();
+ 
+ 		// If seek delay is enabled, we can't search here because the seek delay depends
+@@ -1191,7 +1170,32 @@
+ 
+ #endif	// CPU_DEBUG
+ 
+-bool game::getMouseEnabled()
++bool game::get_mouse_enabled()
+ {
+ 	return m_bMouseEnabled;
+ }
++
++void game::set_mouse_enabled(bool thisFlag)
++{
++	m_bMouseEnabled = thisFlag;
++}
++
++int game::get_mice_detected()
++{
++	return m_miceDetected;
++}
++
++void game::set_mice_detected(int thisMany)
++{
++	m_miceDetected = thisMany;	
++}
++
++bool game::get_pause_key_flag()
++{
++	return m_bPauseKeyEnabled;
++}
++
++void game::set_pause_key_flag(bool thisBol)
++{
++	m_bPauseKeyEnabled = thisBol;
++}
+diff -ru ../../daphne/src/game/game.h game/game.h
+--- ../../daphne/src/game/game.h	2019-12-18 16:46:46.967478506 +0000
++++ game/game.h	2019-12-19 15:42:01.404344139 +0000
+@@ -49,7 +49,7 @@
+ 
+ #include <SDL.h>
+ #include "../sound/sound.h"
+-#include "../cpu/cpu.h"	// for CPU_MEM_SIZE
++//#include "../cpu/cpu.h"	// for CPU_MEM_SIZE
+ #include "../io/input.h"	// for SWITCH definitions, most/all games need them
+ #include "../io/logger.h"
+ 
+@@ -100,9 +100,9 @@
+ 	virtual Uint8 port_read(Uint16 port);		// read from port
+ 	virtual void port_write(Uint16 port, Uint8 value);		// write to a port
+ 	virtual void update_pc(Uint32 new_pc);		// update the PC
+-	virtual void input_enable(Uint8);
+-	virtual void input_disable(Uint8);
+-	virtual void OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel);  // Added by ScottD
++	virtual void input_enable(Uint8, int);
++	virtual void input_disable(Uint8, int);
++	virtual void OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID);  // Added by ScottD
+ 	virtual void OnVblank();	// this gets called by the ldp class every vblank (since many games use vblank for their interrupt)
+ 
+ 	// This optional function will get called 4 times by the ldv1000 driver IF the game driver has first called ldv1000_report_vsync.
+@@ -151,7 +151,7 @@
+ 	virtual bool handle_cmdline_arg(const char *arg);	// the cmd line will pass on any unknown variables to the game to see if there is a game-specific option to be parsed
+ 	void disable_crc();  // skips CRC check on ROM load
+ 	virtual bool load_roms();	// load roms into memory
+-	bool verify_required_file(const char *filename, const char *gamedir, Uint32 filecrc32);	// verifies existence of a required file (such as a readme.txt for DLE)
++	bool verify_required_file2(const char *filename, const char *gamedir, Uint32 filecrc32);	// verifies existence of a required file (such as a readme.txt for DLE)
+ 	virtual void patch_roms();	// do any modifications (cheats, etc) to roms after they're loaded
+ 	int get_video_row_offset();
+ 	int get_video_col_offset();
+@@ -180,13 +180,18 @@
+ #endif
+ 
+ 	// returns m_bMouseEnabled
+-	bool getMouseEnabled();
++	bool get_mouse_enabled();
++	void set_mouse_enabled(bool); // RDG
++	int get_mice_detected();
++	void set_mice_detected(int);
++	bool get_pause_key_flag();
++	void set_pause_key_flag(bool);
+ 
+ protected:
+ 	bool m_game_paused;	// whether the game is paused or not
+ 	const char *m_shortgamename;	// a one-word name for this game (ie "lair" "ace" "dle", etc)
+ 	const struct rom_def *m_rom_list;	// pointer to a null-terminated array of roms to be loaded
+-	Uint8 m_cpumem[CPU_MEM_SIZE];	// generic buffer that most 16-bit addressing cpu's can use
++//	Uint8 m_cpumem[CPU_MEM_SIZE];	// generic buffer that most 16-bit addressing cpu's can use
+ 	unsigned int m_uDiscFPKS;	// frames per kilosecond of the game's laserdisc (to avoid using gp2x-unfriendly float)
+ 	double m_disc_fps;	// frames per second of the game's laserdisc; (only used initially since it is expensive on gp2x)
+ //	double m_disc_ms_per_frame;	// how many ms per frame of the game's laserdisc (same value as fps, just re-arranged)
+@@ -244,7 +249,9 @@
+ 	unsigned int m_uVideoOverlayVisibleLines;
+ 
+ 	// if the game uses the mouse, this should be set to true IN THE GAME'S CONSTRUCTOR
+-	bool m_bMouseEnabled;
++	bool m_bMouseEnabled; // rdg
++	int m_miceDetected; 
++	bool m_bPauseKeyEnabled;
+ 
+ 	// logger interface (for writing to daphne_log.txt file)
+ 	ILogger *m_pLogger;
+diff -ru ../../daphne/src/game/Makefile game/Makefile
+--- ../../daphne/src/game/Makefile	2019-12-08 16:47:17.947480658 +0000
++++ game/Makefile	2019-12-19 15:42:01.404344139 +0000
+@@ -1,15 +1,11 @@
+-# sub Makefile
++# sub Makefile for GAME folder
+ 
+ %.d : %.cpp
+ 	set -e; $(CXX) -MM $(CFLAGS) $< \
+ 		| sed 's^\($*\)\.o[ :]*^\1.o $@ : ^g' > $@; \
+ 		[ -s $@ ] || rm -f $@
+ 
+-OBJS = game.o boardinfo.o lair.o superd.o thayers.o astron.o firefox.o \
+-	cliff.o speedtest.o seektest.o cputest.o ffr.o esh.o laireuro.o \
+-	badlands.o starrider.o bega.o multicputest.o cobraconv.o gpworld.o \
+-        interstellar.o benchmark.o lair2.o mach3.o lgp.o timetrav.o \
+-	releasetest.o singe.o test_sb.o
++OBJS = game.o singe.o
+ 
+ .SUFFIXES:	.cpp
+ 
+@@ -22,3 +18,4 @@
+ 
+ clean:
+ 	rm ${OBJS} *.d
++
+diff -ru ../../daphne/src/game/singe/singe_interface.h game/singe/singe_interface.h
+--- ../../daphne/src/game/singe/singe_interface.h	2019-12-18 17:49:13.511437216 +0000
++++ game/singe/singe_interface.h	2019-12-19 15:42:01.404344139 +0000
+@@ -2,9 +2,10 @@
+ #define SINGE_INTERFACE_H
+ 
+ // increase this number every time you change something in this file!!!
+-#define SINGE_INTERFACE_API_VERSION 5
++#define SINGE_INTERFACE_API_VERSION 7
++#define MAX_TITLE_LENGTH 40 //27
+ 
+-// info provided to Singe from Daphne
++// info provided to Daphne to Singe
+ struct singe_in_info
+ {
+ 	// the API version (THIS MUST COME FIRST!)
+@@ -28,6 +29,12 @@
+ 	
+ 	// From sound/samples.h
+ 	int (*samples_play_sample)(Uint8 *pu8Buf, unsigned int uLength, unsigned int uChannels, int iSlot, void (*finishedCallback)(Uint8 *pu8Buf, unsigned int uSlot));
++	bool (*samples_set_state)  (unsigned int, bool); // by rdg -- give Singe the ability to pause/resume samples
++	bool (*samples_is_sample_playing) (unsigned int); // Find out is a sample is still in the stream queue
++	bool (*samples_end_early) (unsigned int); // Terminate a sample from playing
++	void (*set_soundchip_nonvldp_volume)(unsigned int); // Control sound sample volume 
++	void (*samples_flush_queue)();
++	unsigned int (*get_soundchip_nonvldp_volume)();
+ 
+ 	// Laserdisc Control Functions
+ 	void (*enable_audio1)();
+@@ -43,25 +50,34 @@
+ 	void (*pre_pause)();
+ 	void (*pre_stop)();
+ 	bool (*pre_search)(const char *, bool block_until_search_finished);
+-	void (*framenum_to_frame)(Uint16, char *);
+-	bool (*pre_skip_forward)(Uint16);
+-	bool (*pre_skip_backward)(Uint16);
++	void (*framenum_to_frame)(Uint32, char *);
++	bool (*pre_skip_forward)(Uint32);
++	bool (*pre_skip_backward)(Uint32);
+ 	void (*pre_step_forward)();
+ 	void (*pre_step_backward)();
+ 
+ 	//by RDG2010
+ 	void *pSingeInstance;
+-	void (*cfm_set_keyboard_mode)(void *, int);
+-	int  (*cfm_get_keyboard_mode)(void *);	
+-	int  (*get_status)();
++	void (*dll_side_set_keyboard_mode)(void *, int);
++	int  (*dll_side_get_keyboard_mode)(void *);	
++	int  (*get_vldp_status)();
+ 	double (*get_singe_version)(void);
+ 	void (*set_ldp_verbose)(bool);	
++	void (*dll_side_set_caption)(void *, char *);
++	void (*dll_side_get_script_path)(void *, char *);
++	void (*dll_side_mouse_enable)(void *);
++	void (*dll_side_mouse_disable)(void *);
++	bool (*dll_side_set_mouse_mode)(int);
++	int (*dll_side_mouse_get_how_many)(void *);
++	void (*dll_side_pause_enable)(void *);
++	void (*dll_side_pause_disable)(void *);
+ 
+ 	// VARIABLES:
+ 	
+ 	// VLDP Interface
+ 	struct vldp_in_info        *g_local_info;
+ 	const struct vldp_out_info *g_vldp_info;
++	//SDL_Surface *g_screen_blitter;
+ 	
+ };
+ 
+@@ -74,7 +90,7 @@
+ 	// FUNCTIONS:
+ 	void (*sep_call_lua)(const char *func, const char *sig, ...);
+ 	void (*sep_do_blit)(SDL_Surface *srfDest);
+-	void (*sep_do_mouse_move)(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel);
++	void (*sep_do_mouse_move)(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID);
+ 	void (*sep_error)(const char *fmt, ...);
+ 	void (*sep_print)(const char *fmt, ...);
+ 	void (*sep_set_static_pointers)(double *m_disc_fps, unsigned int *m_uDiscFPKS);
+diff -ru ../../daphne/src/game/singe/singeproxy.cpp game/singe/singeproxy.cpp
+--- ../../daphne/src/game/singe/singeproxy.cpp	2019-12-18 17:49:13.511437216 +0000
++++ game/singe/singeproxy.cpp	2019-12-19 15:42:01.404344139 +0000
+@@ -22,7 +22,6 @@
+ 
+ #include "singeproxy.h"
+ #include "singe_interface.h"
+-
+ #include <vector>
+ 
+ using namespace std;
+@@ -217,18 +216,14 @@
+ 	g_pSingeIn->set_quitflag();
+ }
+ 
+-void sep_do_blit(SDL_Surface *srfDest)
+-{
+-	sep_srf32_to_srf8(g_se_surface, srfDest);
+-}
+-
+-void sep_do_mouse_move(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel)
++void sep_do_mouse_move(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID)
+ {
+ 	static bool debounced = false;
+ 	int x1 = (int)x;
+ 	int y1 = (int)y;
+ 	int xr = (int)xrel;
+ 	int yr = (int)yrel;
++	int mID = (int) mouseID;
+ 	
+ 	// Not sure what's wrong here.  I think things are getting started before Singe is ready.
+ 	if (!debounced) {
+@@ -241,7 +236,7 @@
+ 	xr *= g_sep_overlay_scale_x;
+ 	yr *= g_sep_overlay_scale_y;
+ 	
+-	sep_call_lua("onMouseMoved", "iiii", x1, y1, xr, yr);
++	sep_call_lua("onMouseMoved", "iiiii", x1, y1, xr, yr, mID);
+ }
+ 
+ void sep_error(const char *fmt, ...)
+@@ -260,7 +255,7 @@
+ 	lua_Debug ar;
+ 	int level = 0;
+ 
+-	sep_print("Singe has paniced!  Very bad!");
++	sep_print("Singe has panicked!  Very bad!");
+ 	sep_print("Error:  %s", lua_tostring(L, -1));
+ 
+ 	sep_print("Stack trace:");
+@@ -337,7 +332,7 @@
+ 	bool createSurface = false;
+ 	
+ 	g_se_overlay_height = height;
+-  g_se_overlay_width = width;
++    g_se_overlay_width = width;
+ 	
+ 	if (g_se_surface == NULL) {
+ 		createSurface = true;
+@@ -350,7 +345,7 @@
+ 	}
+ 	
+ 	if (createSurface) {
+-		g_se_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, g_se_overlay_width, g_se_overlay_height, 32, 0xFF, 0xFF00, 0xFF0000, 0xFF000000);
++		g_se_surface = SDL_CreateRGBSurface(SDL_SRCALPHA|SDL_SWSURFACE, g_se_overlay_width, g_se_overlay_height, 32, 0xFF, 0xFF00, 0xFF0000, 0xFF000000);		
+ 		g_sep_overlay_scale_x = (double)g_se_overlay_width / (double)g_pSingeIn->get_video_width();
+ 		g_sep_overlay_scale_y = (double)g_se_overlay_height / (double)g_pSingeIn->get_video_height();
+ 	}
+@@ -360,7 +355,7 @@
+ {
+ 	sep_release_vldp();
+ 	
+-  sep_unload_fonts();
++    sep_unload_fonts();
+ 	sep_unload_sounds();
+ 	sep_unload_sprites();
+ 	
+@@ -399,6 +394,36 @@
+ 	
+ }
+ 
++void sep_do_blit(SDL_Surface *srfDest)
++{
++	sep_srf32_to_srf8(g_se_surface, srfDest);
++	//sep_blit_g_screen(g_se_surface, srfDest);
++}
++
++bool sep_blit_g_screen(SDL_Surface *src, SDL_Surface *dst)
++{
++	bool bResult = false;
++	int result = 0;
++	
++	// convert a 32-bit surface to an 8-bit surface (where the palette is one we've defined)
++
++
++	{
++		//SDL_LockSurface(dst);
++		//SDL_LockSurface(src);	
++
++		//SDL_BlitSurface(g_spriteList[sprite], NULL, g_se_surface, &dest);	
++		result = SDL_BlitSurface(src, NULL, dst, NULL);		
++
++		//SDL_UnlockSurface(src);
++		//SDL_UnlockSurface(dst);
++
++		bResult = true;
++	}
++
++	return bResult;
++}
++
+ bool sep_srf32_to_srf8(SDL_Surface *src, SDL_Surface *dst)
+ {
+ 	bool bResult = false;
+@@ -499,6 +524,7 @@
+   lua_register(g_se_lua_context, "discChangeSpeed",    sep_change_speed);
+   lua_register(g_se_lua_context, "discGetFrame",       sep_get_current_frame);
+   lua_register(g_se_lua_context, "discPause",          sep_pause);
++  lua_register(g_se_lua_context, "discPauseAtFrame",   sep_skip_and_pause);
+   lua_register(g_se_lua_context, "discPlay",           sep_play);
+   lua_register(g_se_lua_context, "discSearch",         sep_search);
+   lua_register(g_se_lua_context, "discSearchBlanking", sep_search_blanking);
+@@ -506,7 +532,7 @@
+   lua_register(g_se_lua_context, "discSkipBackward",   sep_skip_backward);
+   lua_register(g_se_lua_context, "discSkipBlanking",   sep_skip_blanking);
+   lua_register(g_se_lua_context, "discSkipForward",    sep_skip_forward);
+-  lua_register(g_se_lua_context, "discSkipToFrame",    sep_skip_to_frame);
++  lua_register(g_se_lua_context, "discSkipToFrame",    sep_skip_to_frame);  
+   lua_register(g_se_lua_context, "discStepBackward",   sep_step_backward);
+   lua_register(g_se_lua_context, "discStepForward",    sep_step_forward);
+   lua_register(g_se_lua_context, "discStop",           sep_stop);
+@@ -522,13 +548,20 @@
+   lua_register(g_se_lua_context, "overlayGetWidth",    sep_get_overlay_width);
+   lua_register(g_se_lua_context, "overlayPrint",       sep_say);
+ 	
+-	lua_register(g_se_lua_context, "soundLoad",        sep_sound_load);
+-	lua_register(g_se_lua_context, "soundPlay",        sep_sound_play);
+-
+-	lua_register(g_se_lua_context, "spriteDraw",       sep_sprite_draw);
+-	lua_register(g_se_lua_context, "spriteGetHeight",  sep_sprite_height);
+-	lua_register(g_se_lua_context, "spriteGetWidth",   sep_sprite_width);
+-	lua_register(g_se_lua_context, "spriteLoad",       sep_sprite_load);
++  lua_register(g_se_lua_context, "soundLoad",          sep_sound_load);
++  lua_register(g_se_lua_context, "soundPlay",          sep_sound_play);
++  lua_register(g_se_lua_context, "soundPause",         sep_sound_pause);    // rdg
++  lua_register(g_se_lua_context, "soundResume",        sep_sound_resume);   //
++  lua_register(g_se_lua_context, "soundIsPlaying",     sep_sound_get_flag); //
++  lua_register(g_se_lua_context, "soundStop",          sep_sound_stop); //
++  lua_register(g_se_lua_context, "soundSetVolume",     sep_sound_set_volume); 
++  lua_register(g_se_lua_context, "soundGetVolume",     sep_sound_get_volume);
++  lua_register(g_se_lua_context, "soundFullStop",      sep_sound_flush_queue);
++
++  lua_register(g_se_lua_context, "spriteDraw",         sep_sprite_draw);
++  lua_register(g_se_lua_context, "spriteGetHeight",    sep_sprite_height);
++  lua_register(g_se_lua_context, "spriteGetWidth",     sep_sprite_width);
++  lua_register(g_se_lua_context, "spriteLoad",         sep_sprite_load);
+ 
+   lua_register(g_se_lua_context, "vldpGetHeight",      sep_mpeg_get_height);
+   lua_register(g_se_lua_context, "vldpGetPixel",       sep_mpeg_get_pixel);
+@@ -538,12 +571,20 @@
+   // by RDG2010
+   lua_register(g_se_lua_context, "keyboardGetMode",    sep_keyboard_get_mode); 
+   lua_register(g_se_lua_context, "keyboardSetMode",    sep_keyboard_set_mode);
++  lua_register(g_se_lua_context, "mouseEnable",        sep_mouse_enable);
++  lua_register(g_se_lua_context, "mouseDisable",       sep_mouse_disable);
++  lua_register(g_se_lua_context, "mouseSetMode",       sep_mouse_set_mode);
++  lua_register(g_se_lua_context, "mouseHowMany",       sep_mouse_get_how_many);
+   lua_register(g_se_lua_context, "discGetState",       sep_get_vldp_state);  
+   lua_register(g_se_lua_context, "singeGetPauseFlag",  sep_get_pause_flag);
+   lua_register(g_se_lua_context, "singeSetPauseFlag",  sep_set_pause_flag);
++  lua_register(g_se_lua_context, "singeEnablePauseKey",   sep_pause_enable);
++  lua_register(g_se_lua_context, "singeDisablePauseKey",  sep_pause_disable);
+   lua_register(g_se_lua_context, "singeQuit",          sep_singe_quit);
+-  lua_register(g_se_lua_context, "singeVersion",       sep_singe_version);  
+-  
++  lua_register(g_se_lua_context, "singeVersion",       sep_singe_version); 
++  lua_register(g_se_lua_context, "singeSetGameName",   sep_set_game_name); 
++  lua_register(g_se_lua_context, "singeGetScriptPath", sep_get_script_path);
++                                  
+   //////////////////
+ 
+   if (TTF_Init() < 0)
+@@ -584,8 +625,12 @@
+ void sep_unload_sounds(void)
+ {
+   int x;
++  // Singe will crash if waves are unloaded from memory before clearing the audio queue.
++  // Lets fix that.  --RDG
++
++  g_pSingeIn->samples_flush_queue();  // stop all sounds from SDL's audio queue  -rdg
+ 
+-  if (g_soundList.size() > 0)
++  if (g_soundList.size() > 0)  // unload wave files from memory -- rdg
+ 	{
+     for (x=0; x<(int)g_soundList.size(); x++)
+ 			SDL_FreeWAV(g_soundList[x].buffer);
+@@ -1125,8 +1170,9 @@
+ 	{
+ 		if (lua_isnumber(L, 1))
+ 		{
++
+ 			// TODO : implement this for real on the daphne side of things instead of having to do a search/play hack
+-			char s[6] = { 0 };
++			char s[7] = { 0 };
+ 			g_pSingeIn->framenum_to_frame(lua_tonumber(L, 1), s);
+ 			g_pSingeIn->pre_search(s, true);
+ 			g_pSingeIn->pre_play();
+@@ -1137,6 +1183,30 @@
+ 	return 0;
+ }
+ 
++static int sep_skip_and_pause(lua_State *L)
++{
++	
++	int n = lua_gettop(L);
++
++	if (n == 1)
++	{
++		if (lua_isnumber(L, 1))
++		{
++
++			// TODO : implement this for real on the daphne side of things instead of having to do a search/play hack
++			char s[10] = { 0 }; // i am not sure what's the max frame value can be is at the time of this writing.... --- rdg
++			g_pSingeIn->framenum_to_frame(lua_tonumber(L, 1), s);
++			g_pSingeIn->pre_search(s, true);
++			g_pSingeIn->pre_play();
++			g_pSingeIn->pre_pause();
++			g_pause_state = true; // by RDG2010
++		}
++	}
++	
++	return 0;
++
++}
++
+ static int sep_sound_load(lua_State *L)
+ {
+   int n = lua_gettop(L);
+@@ -1177,27 +1247,29 @@
+   return 1;
+ }
+ 
++
++
+ static int sep_sprite_draw(lua_State *L)
+ {
+   int n = lua_gettop(L);
+ 
+   if (n == 3)
+     if (lua_isnumber(L, 1))
+-			if (lua_isnumber(L, 2))
+-				if (lua_isnumber(L, 3))
++		if (lua_isnumber(L, 2))
++			if (lua_isnumber(L, 3))
++			{
++				int sprite = lua_tonumber(L, 3);
++				if (sprite < (int)g_spriteList.size())
+ 				{
+-					int sprite = lua_tonumber(L, 3);
+-					if (sprite < (int)g_spriteList.size())
+-					{
+-						SDL_Rect dest;
+-						dest.x = lua_tonumber(L, 1);
+-						dest.y = lua_tonumber(L, 2);
+-						dest.w = g_spriteList[sprite]->w;
+-						dest.h = g_spriteList[sprite]->h;
+-						
+-						SDL_BlitSurface(g_spriteList[sprite], NULL, g_se_surface, &dest);
+-					}
++					SDL_Rect dest;
++					dest.x = lua_tonumber(L, 1);
++					dest.y = lua_tonumber(L, 2);
++					dest.w = g_spriteList[sprite]->w;
++					dest.h = g_spriteList[sprite]->h;					
++					SDL_BlitSurface(g_spriteList[sprite], NULL, g_se_surface, &dest);	
++					
+ 				}
++			}
+ 	
+ 	return 0;
+ }
+@@ -1230,12 +1302,20 @@
+     if (lua_isstring(L, 1))
+ 		{
+ 			const char *sprite = lua_tostring(L, 1);
+-			SDL_Surface *temp = IMG_Load(sprite);
++			SDL_Surface *temp = IMG_Load(sprite);			
++
+ 			if (temp != NULL)
+ 			{
+-				SDL_SetAlpha(temp, SDL_RLEACCEL, 0);
++				// by RDG: If the PNG has transparent areas then set 
++				// the appropriate alpha channel implementation.				
++				if (temp->format->Amask != 0) 
++					SDL_SetAlpha(temp, SDL_SRCALPHA|SDL_RLEACCEL, SDL_ALPHA_TRANSPARENT);
++				else 
++					SDL_SetAlpha(temp, SDL_RLEACCEL, 0);
++
+ 				g_spriteList.push_back(temp);
+ 				result = g_spriteList.size() - 1;
++
+ 			} else
+ 				sep_die("Unable to load sprite %s!", sprite);
+ 		}
+@@ -1307,7 +1387,7 @@
+ 		if (lua_isnumber(L, 1))
+ 		{	
+ 			q = lua_tonumber(L, 1);
+-			g_pSingeIn->cfm_set_keyboard_mode(g_pSingeIn->pSingeInstance, q);
++			g_pSingeIn->dll_side_set_keyboard_mode(g_pSingeIn->pSingeInstance, q);
+ 			
+ 		}
+ 	}
+@@ -1332,7 +1412,7 @@
+ 	*
+ 	*/
+ 
+-	lua_pushnumber(L, g_pSingeIn->cfm_get_keyboard_mode(g_pSingeIn->pSingeInstance));	
++	lua_pushnumber(L, g_pSingeIn->dll_side_get_keyboard_mode(g_pSingeIn->pSingeInstance));	
+ 	return 1;
+ }
+ 
+@@ -1368,7 +1448,7 @@
+ 	*
+ 	*/
+ 
+-	lua_pushnumber(L, g_pSingeIn->get_status());	
++	lua_pushnumber(L, g_pSingeIn->get_vldp_status());	
+ 	return 1;
+ 
+ }
+@@ -1392,7 +1472,7 @@
+ 	return 1;
+ 
+ }
+-
++// by RDG2010
+ static int sep_set_pause_flag(lua_State *L)
+ {
+ 	int n = lua_gettop(L);
+@@ -1409,7 +1489,7 @@
+ 	}	
+ 	return 0;
+ }
+-
++// by RDG2010
+ static int sep_singe_version(lua_State *L)
+ {
+    /*
+@@ -1422,6 +1502,7 @@
+ 	return 1;
+ 	
+ }
++// by RDG2010
+ static int sep_ldp_verbose(lua_State *L)
+ {
+ 	/*
+@@ -1444,3 +1525,290 @@
+ 	
+ 	return 0;
+ }
++// by RDG2010
++static int sep_sound_pause(lua_State *L)
++{
++// Instructs Daphne to pause a given sample from playing.
++// User must feed the sound handle on the lua side.
++// e.g. lua code, 
++//
++//		thisHandle = soundPlay(mySound)
++//		soundPause(thisHandle)
++//
++// Function returns true if sample was paused, false otherwise.
++//
++// --rdg
++	
++	int n = lua_gettop(L);
++  int result = -1;
++
++  if (n == 1)
++    if (lua_isnumber(L, 1))
++		{
++			int sound = lua_tonumber(L, 1);			
++				result = g_pSingeIn->samples_set_state(sound, false);
++		}
++		
++  lua_pushboolean(L, result);
++  return 1;
++}
++// by RDG2010
++static int sep_sound_resume(lua_State *L)
++{
++// Instructs Daphne to unpause a sound that was previously paused.
++// User must feed the sound handle on the lua side.
++// e.g. lua code, 
++//
++//		thisHandle = soundPlay(mySound)
++//		soundPause(thisHandle)
++//		soundResume(thisHandle)
++//
++// Function returns true if sample was unpaused, false otherwise.
++//
++// --rdg
++
++  int n = lua_gettop(L);
++	int result = -1;
++
++  if (n == 1)
++    if (lua_isnumber(L, 1))
++		{
++			int sound = lua_tonumber(L, 1);			
++				result = g_pSingeIn->samples_set_state(sound, true);
++		}
++		
++	lua_pushboolean(L, result);
++  return 1;
++}
++// by RDG2010
++static int sep_sound_stop(lua_State *L)
++{
++// Instructs Daphne to end a sound early.
++// User must feed the sound handle on the lua side.
++// e.g. lua code, 
++//
++//		thisHandle = soundPlay(mySound)
++//		soundStop(thisHandle)
++//
++// Function returns true if sample was stopped, false otherwise.
++// NOTE: thisHandle will be invalidated as a result of this function.
++// Lua doesn't do variables by reference, so it is
++// up to the user to keep track of sound handles on the lua script.
++//
++// --rdg
++
++  int n = lua_gettop(L);
++  int result = -1;
++
++  if (n == 1)
++    if (lua_isnumber(L, 1))
++		{
++			int sound = lua_tonumber(L, 1);			
++				result = g_pSingeIn->samples_end_early(sound);
++		}
++
++  lua_pushboolean(L, result);	
++  return 1;
++}
++// by RDG2010
++static int sep_sound_flush_queue(lua_State *L)
++{
++// Clears the audio queue of any samples actively playing.
++// No parameters needed. Function returns nothing.
++// e.g. lua code, 
++//
++//		soundFullStop()
++//		
++
++	g_pSingeIn->samples_flush_queue();
++	return 0;
++}
++// by RDG2010
++static int sep_sound_get_flag(lua_State *L)
++{
++// Checks to see if a certain sound has finished playing.
++// User must feed the sound handle on the lua side.
++// e.g. lua code, 
++//
++//		thisHandle = soundPlay(mySound)
++//		if (soundIsPlaying(thisSound)) then do something ... end
++//
++// Function returns true if sample is still playing, false otherwise.
++//
++// --rdg
++
++  int n = lua_gettop(L);
++  bool result = false;
++
++  if (n == 1)
++    if (lua_isnumber(L, 1))
++		{
++			int sound = lua_tonumber(L, 1);			
++				result = g_pSingeIn->samples_is_sample_playing(sound);
++		}
++		
++	lua_pushboolean(L, result);
++	return 1;
++}
++// by RDG2010
++static int sep_sound_set_volume(lua_State *L)
++{
++// Allows manipulation of sample volume.
++// Valid values range from 0 to 63
++// e.g. lua code, 
++//
++//       soundSetVolume(32)
++//
++// Function returns nothing.
++//
++// --rdg
++
++  int n = lua_gettop(L);
++	int result = -1;
++
++  if (n == 1)
++    if (lua_isnumber(L, 1))
++		{
++			unsigned int thisValue = (unsigned int) lua_tonumber(L, 1);			
++			if (thisValue >= 0 && thisValue < AUDIO_MAX_VOLUME)
++				g_pSingeIn->set_soundchip_nonvldp_volume(thisValue);
++			else
++				sep_print("Script Error! Invalid sound volume value.");
++		}
++		
++	lua_pushboolean(L, result);
++  return 0;
++}
++// by RDG2010
++static int sep_sound_get_volume(lua_State *L)
++{
++// Returns the current sample volume value.
++// e.g. lua code, 
++//       
++//      local iVolume = soundGetVolume()
++//
++// Function returns an integer value ranging from 0 to 63.
++//
++// --rdg
++
++	int vol = g_pSingeIn->get_soundchip_nonvldp_volume();
++	if (vol > 0)  vol--; // why this line? AUDIO_MAX_VOLUME starts counting at zero.
++	lua_pushnumber(L, vol);
++	return 1;
++}
++// by RDG2010
++static int sep_set_game_name(lua_State *L)
++{
++// Adds the name of the singe game to the window's title bar.
++// Valid value is a string no longer than 25 characters.
++// e.g. lua code, 
++//
++//       singeSetGameName("My FMV game")
++//
++// Function returns nothing.
++//
++// --rdg
++
++  int n = lua_gettop(L);
++  int result = -1;
++
++  if (n == 1)
++    if (lua_isstring(L, 1))
++		{
++			char thisName[MAX_TITLE_LENGTH];
++			//sprintf(thisName,"%.27s",lua_tostring(L, 1)); // Need a better way to do this...
++			sprintf(thisName,"%.40s",lua_tostring(L, 1)); // Need a better way to do this...
++			g_pSingeIn->dll_side_set_caption(g_pSingeIn->pSingeInstance, thisName);			
++		}
++		
++	lua_pushboolean(L, result);
++  return 0;
++}
++
++static int sep_get_script_path(lua_State *L)
++{
++// Returns the path to the singe script.
++// e.g. lua code, 
++//			
++//		sGameDirectory = singeGetScriptPath()
++//
++		
++
++	char s1[255];
++	g_pSingeIn->dll_side_get_script_path(g_pSingeIn->pSingeInstance, s1);	
++	lua_pushstring(L, s1);
++
++	return 1;
++
++}
++
++static int sep_mouse_enable(lua_State *L)
++{
++// Disables mouse monitoring
++	g_pSingeIn->dll_side_mouse_enable(g_pSingeIn->pSingeInstance);
++	return 0;
++}
++
++static int sep_mouse_disable(lua_State *L)
++{
++	g_pSingeIn->dll_side_mouse_disable(g_pSingeIn->pSingeInstance);
++	return 0;
++}
++
++static int sep_mouse_get_how_many(lua_State *L)
++{
++	int mouse_total = g_pSingeIn->dll_side_mouse_get_how_many(g_pSingeIn->pSingeInstance);
++	lua_pushnumber(L, mouse_total);
++	return 1;
++}
++
++static int sep_pause_enable(lua_State *L)
++{
++// Disables mouse monitoring
++	g_pSingeIn->dll_side_pause_enable(g_pSingeIn->pSingeInstance);
++	return 0;
++}
++
++static int sep_pause_disable(lua_State *L)
++{
++	g_pSingeIn->dll_side_pause_disable(g_pSingeIn->pSingeInstance);
++	return 0;
++}
++
++static int sep_mouse_set_mode(lua_State *L)
++{
++// Sets the scanning mode for mouse input.
++// Can be one of two values:
++//
++// SINGLE_MOUSE = 100  
++// MANY_MOUSE   = 200 
++//
++// Be sure to add these constant declarations to your framework.singe
++// By default Singe starts in single mouse mode.
++// Use this command if you need to scan multiple mice.
++// e.g. lua code, 
++//
++//       mouseSetMode(MANY_MOUSE)
++//
++// Function returns TRUE is mode set was successful, FALSE otherwise.
++//
++// --rdg
++
++	int n = lua_gettop(L);
++	int thisValue = 0;	
++	bool result = false;
++
++	if (n == 1)
++		if (lua_isnumber(L, 1))
++		{			
++			thisValue = lua_tonumber(L, 1);
++			result = g_pSingeIn->dll_side_set_mouse_mode(thisValue);
++			if (!result) sep_print("mouseSetMode failed. Is mouse enabled?");
++			
++		}
++	lua_pushboolean(L, result);
++	return 1;
++
++}
++		
++	
+\ No newline at end of file
+diff -ru ../../daphne/src/game/singe/singeproxy.h game/singe/singeproxy.h
+--- ../../daphne/src/game/singe/singeproxy.h	2019-12-18 17:49:13.511437216 +0000
++++ game/singe/singeproxy.h	2019-12-19 15:42:01.404344139 +0000
+@@ -25,6 +25,7 @@
+ #include <string.h>
+ 
+ #include "../../vldp2/vldp/vldp.h"  // to get the vldp structs
++#include "../../sound/sound.h"  // to get the sound structs - rdg
+ 
+ // by RDG2010
+ // Ubuntu Linux complains if SDL includes are used with quotes.
+@@ -51,7 +52,7 @@
+ void          sep_capture_vldp();
+ void          sep_die(const char *fmt, ...);
+ void          sep_do_blit(SDL_Surface *srfDest);
+-void          sep_do_mouse_move(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel);
++void          sep_do_mouse_move(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID);
+ void          sep_error(const char *fmt, ...);
+ int           sep_lua_error(lua_State *L);
+ int           sep_prepare_frame_callback(struct yuv_buf *src);
+@@ -62,6 +63,7 @@
+ void          sep_shutdown(void);
+ void          sep_sound_ended(Uint8 *buffer, unsigned int slot);
+ bool          sep_srf32_to_srf8(SDL_Surface *src, SDL_Surface *dst);
++bool          sep_blit_g_screen(SDL_Surface *src, SDL_Surface *dst);//rdg
+ void          sep_startup(const char *script);
+ void          sep_unload_fonts(void);
+ void          sep_unload_sounds(void);
+@@ -119,3 +121,19 @@
+ static int sep_set_pause_flag(lua_State *L);
+ static int sep_singe_version(lua_State *L);
+ static int sep_ldp_verbose(lua_State *L);
++static int sep_sound_pause(lua_State *L);
++static int sep_sound_resume(lua_State *L);
++static int sep_sound_get_flag(lua_State *L);
++static int sep_sound_stop(lua_State *L);
++static int sep_sound_set_volume(lua_State *L);
++static int sep_sound_get_volume(lua_State *L);
++static int sep_sound_flush_queue(lua_State *L);
++static int sep_set_game_name(lua_State *L);
++static int sep_get_script_path(lua_State *L);
++static int sep_mouse_enable(lua_State *L);
++static int sep_mouse_disable(lua_State *L);
++static int sep_mouse_get_how_many(lua_State *L);
++static int sep_skip_and_pause(lua_State *L);
++static int sep_pause_enable(lua_State *L);
++static int sep_pause_disable(lua_State *L);
++static int sep_mouse_set_mode(lua_State *L);
+diff -ru ../../daphne/src/game/singe.cpp game/singe.cpp
+--- ../../daphne/src/game/singe.cpp	2019-12-18 17:49:40.204127771 +0000
++++ game/singe.cpp	2019-12-19 17:10:39.238097557 +0000
+@@ -24,9 +24,11 @@
+ * This is SINGE - the Somewhat Interactive Nostalgic Game Engine!
+ */
+ 
++#include <string.h>
+ #include "singe.h"
+ #include "singe/singe_interface.h"
+ 
++
+ // Win32 doesn't use strcasecmp, it uses stricmp (lame)
+ #ifdef WIN32
+ #define strcasecmp stricmp
+@@ -38,6 +40,12 @@
+ 
+ extern       struct vldp_in_info   g_local_info;
+ extern const struct vldp_out_info *g_vldp_info;
++extern SDL_Surface *g_screen_blitter;
++//extern SDL_Surface *g_screen;
++//extern SDL_Surface *get_screen_blitter();
++extern void vid_blank();
++extern void vid_flip();
++extern void vid_blit(SDL_Surface *srf, int x, int y);
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+@@ -63,6 +71,7 @@
+ {
+ 	m_strGameScript = "";
+ 	m_shortgamename = "singe";
++	m_strScriptPath = "";
+ 	m_strName = "[Undefined scripted game]";
+ 	m_video_overlay_width = 320;	// sensible default
+ 	m_video_overlay_height = 240;	// " " "
+@@ -71,8 +80,9 @@
+ 	m_bMouseEnabled = true;
+ 	m_dll_instance = NULL;
+ 	// by RDG2010
+-	m_game_type = GAME_SINGE; 
++	m_game_type = GAME_SINGE;
+ 	i_keyboard_mode = KEYBD_NORMAL;
++
+ }
+ 
+ bool singe::init()
+@@ -84,7 +94,7 @@
+ #ifndef DEBUG
+ 	m_dll_instance = M_LOAD_LIB(singe);	// load SINGE.DLL
+ #else
+-	m_dll_instance = M_LOAD_LIB(singed);	// load SINGED.DLL (debug version)
++	m_dll_instance = M_LOAD_LIB(singe_dbg);	// load SINGED.DLL (debug version)
+ #endif
+ 
+ 	// If the handle is valid, try to get the function address. 
+@@ -115,7 +125,19 @@
+ 	// if pSingeInit is valid ...
+ 	if (bSuccess)
+ 	{
+-		g_SingeIn.uVersion = SINGE_INTERFACE_API_VERSION;
++		// DLL basics can be confusing so I am writing this down to remind myself in the future.
++		// These g_SingeIn declarations wires functions located on the daphne side
++		// so they can be called on the DLL side of singe.
++		// An alias is used by the DLL source code to refer to them. 
++		//
++		// Looking below:
++		// The name on the right of the declaration is the actual daphne function or variable.
++		// The name on the left of the declaration is the alias used by the DLL.
++
++		// Before you can add a g_SingeIn declaration here, you must have 
++		// the function properly declared in singe.h
++
++        g_SingeIn.uVersion = SINGE_INTERFACE_API_VERSION;
+ 		g_SingeIn.printline = printline;
+ 		g_SingeIn.set_quitflag = set_quitflag;
+ 		g_SingeIn.disable_audio1 = disable_audio1;
+@@ -144,68 +166,79 @@
+ 		g_SingeIn.set_last_error = set_last_error;
+ 		
+ 		// by RDG2010
+-		g_SingeIn.get_status = get_status;
++		g_SingeIn.get_vldp_status = get_vldp_status;
+ 		g_SingeIn.get_singe_version = get_singe_version;
+ 		g_SingeIn.set_ldp_verbose = set_ldp_verbose;
+-
+-		// These functions allow the DLL side of SINGE
+-		// call the functions set_keyboard_mode and get_keyboard_mode inside this very class.		
+-
+-		// Writing this down to hopefully remind myself in the future.
+-		// The function on the left side is called from the DLL side.
+-		// The DLL refers to this function from within. In this case singeproxy.cpp
+-		// Have a look at the "singe_in_info" struct in singe_interface.h for declaration examples.
+-		//
+-		// The function on the right side is the wrapper function.	
+-		// It's the function that does something on the Daphne side.
+-		// 
+-		// Have a look at the class declaration in singe.h for details.
+-		// The two lines below basically link these functions together
+-		// So when the DLL needs something from Daphne
+-		// then the DLL knows which function to call.
+-		g_SingeIn.cfm_set_keyboard_mode = gfm_set_keyboard_mode;
+-		g_SingeIn.cfm_get_keyboard_mode = gfm_get_keyboard_mode;		
++		g_SingeIn.samples_set_state = samples_set_state;
++		g_SingeIn.samples_is_sample_playing = samples_is_sample_playing;
++		g_SingeIn.samples_end_early = samples_end_early;		
++		g_SingeIn.set_soundchip_nonvldp_volume = set_soundchip_nonvldp_volume;
++		g_SingeIn.get_soundchip_nonvldp_volume = get_soundchip_nonvldp_volume;
++		g_SingeIn.samples_flush_queue = samples_flush_queue;
++		//g_SingeIn.g_screen_blitter = g_screen_blitter;
++
++		// Special cases where it is needed to access or change values 
++		// inside the singe class require special wrapper functions.
++		// These functions allow the DLL side of SINGE call the 
++		// functions set_keyboard_mode and get_keyboard_mode inside this very class.
++		// Take a look a singe.h for the full declarations of these functions:		
++		
++		g_SingeIn.dll_side_set_keyboard_mode  = daphne_side_set_keyboard_mode;
++		g_SingeIn.dll_side_get_keyboard_mode  = daphne_side_get_keyboard_mode;
++		g_SingeIn.dll_side_get_script_path    = daphne_side_get_script_path;
++		g_SingeIn.dll_side_set_caption        = daphne_side_set_caption;		
++		g_SingeIn.dll_side_mouse_enable       = daphne_side_mouse_enable;
++		g_SingeIn.dll_side_mouse_disable      = daphne_side_mouse_disable;
++		g_SingeIn.dll_side_mouse_get_how_many = daphne_side_mouse_get_how_many;
++		g_SingeIn.dll_side_set_mouse_mode     = daphne_side_set_mouse_mode;		
++		g_SingeIn.dll_side_pause_enable       = daphne_side_pause_enable;
++		g_SingeIn.dll_side_pause_disable      = daphne_side_pause_disable;
+ 
+ 		/*
+ 		Why a wrapper?
+ 
+-		Special case. We can't hook up the function on the Daphne side (CFMs)
+-		directly to the functions inside the singe class
+-		because their pointer types don't match.
+-		To do function callbacks you need to provide a static function.
+-		The wrapper function (GFMs) solve this problem.
++		A function on the DLL side can't change or refer to a value
++		inside the singe class because the pointer types don't match.
++		Go around this by creating a special pointer to this class
++		and also declaring a function between the Singe method inside 
++		the class and the DLL function that needs access to it.	
+ 
++		Pointer declaration below...
+ 		*/
+ 
+-		// Pointer to this very same class
+-		// used by CFMs as a parameter on the DLL side
+-		// to gain access to members of the class.
+-		// Have a look at "sep_set_keyboard_mode(...." 
+-		// in singeproxy.cpp for details
+ 		g_SingeIn.pSingeInstance = this;
+ 
+ 		// establish link betwixt singe proxy and us
+ 		g_pSingeOut = pSingeInit(&g_SingeIn);	
+ 
++#ifdef WIN32
++		// do something here....
++		
++#else
+ 		// version check
+ 		if (g_pSingeOut->uVersion != SINGE_INTERFACE_API_VERSION)
+ 		{
+ 			printline("Singe API version mismatch!  Something needs to be recompiled...");
+ 			bSuccess = false;
+ 		}
++#endif
++
+ 	}
+ 
+ 	// if we're not using VLDP, then singe will segfault, so abort ...
+ 	if (g_vldp_info == NULL)
+ 	{
+ 		printerror("You must use VLDP when using Singe.");
+-		bSuccess = false;
++		bSuccess = false;	
+ 	}
+ 	if (!bSuccess)
+ 	{
+ #ifndef STATIC_SINGE
+ 		M_FREE_LIB(m_dll_instance);
+ #endif // STATIC_SINGE
++
++
++		
+ 	}
+ 
+ 	return bSuccess;
+@@ -217,6 +250,11 @@
+ 	char s1[100];
+ 	sprintf(s1,"Starting Singe version %.2f",get_singe_version());
+ 	printline(s1);
++	// comment these two lines for official releases -- rdg
++	//sprintf(s1,"Singe v%.2f BETA", get_singe_version());
++	SDL_WM_SetCaption(s1, "Singe");
++	// BETA
++	
+ 	g_pSingeOut->sep_set_surface(m_video_overlay_width, m_video_overlay_height);
+ 	g_pSingeOut->sep_set_static_pointers(&m_disc_fps, &m_uDiscFPKS);
+ 	g_pSingeOut->sep_startup(m_strGameScript.c_str());
+@@ -224,7 +262,6 @@
+ 	// if singe didn't get an error during startup...
+ 	if (!get_quitflag())
+ 	{
+-
+ 		while (!get_quitflag())
+ 		{
+ 			g_pSingeOut->sep_call_lua("onOverlayUpdate", ">i", &intReturn);
+@@ -258,33 +295,54 @@
+ #endif // STATIC_SINGE
+ }
+ 
+-void singe::input_enable(Uint8 input)
++void singe::input_enable(Uint8 input, int mouseID)
+ {
+ 	if (g_pSingeOut) // by RDG2010
+-		g_pSingeOut->sep_call_lua("onInputPressed", "i", input);
++		g_pSingeOut->sep_call_lua("onInputPressed", "ii", input, mouseID);
+ }
+ 
+-void singe::input_disable(Uint8 input)
++void singe::input_disable(Uint8 input, int mouseID)
+ {
+ 	if (g_pSingeOut) // by RDG2010
+-		g_pSingeOut->sep_call_lua("onInputReleased", "i", input);
++		g_pSingeOut->sep_call_lua("onInputReleased", "ii", input, mouseID);
+ }
+ 
+-void singe::OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel)
++void singe::OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID)
+ {
+ 	if (g_pSingeOut)
+ 	{
+-		/* g_pSingeOut->sep_do_mouse_move(x, y, xrel, yrel, 0); */
+-		g_pSingeOut->sep_do_mouse_move(x, y, xrel, yrel);
++		g_pSingeOut->sep_do_mouse_move(x, y, xrel, yrel, mouseID);
+ 	}
+ }
+ 
+ // game-specific command line arguments handled here
+-bool singe::handle_cmdline_arg(const char *arg)
++bool singe::handle_cmdline_arg(const char *s)
+ {
+ 	
+ 	bool bResult = false;
+ 	static bool scriptLoaded = false;
++
++		if (mpo_file_exists(s))
++		{
++			if (!scriptLoaded)
++			{
++				bResult = scriptLoaded = true;
++				m_strGameScript = s;
++			}
++			else
++			{
++				printline("Only one game script may be loaded at a time!");				
++			}
++		}
++		else
++		{
++			string strErrMsg = "Script ";
++			strErrMsg += s;
++			strErrMsg += " does not exist.";
++			printline(strErrMsg.c_str());
++		}
++
++	/*
+ 	char s[81] = { 0 };
+ 
+ 	if (strcasecmp(arg, "-script") == 0)
+@@ -313,6 +371,7 @@
+ 		}
+ 
+ 	}
++	*/
+ 
+ 	return bResult;
+ 
+@@ -378,7 +437,15 @@
+ 		}
+ 	} // end if dimensions are incorrect
+ 
+-	g_pSingeOut->sep_do_blit(m_video_overlay[m_active_video_overlay]);
++	g_pSingeOut->sep_do_blit(m_video_overlay[m_active_video_overlay]);	
++	
++	//g_pSingeOut->sep_do_blit(g_screen_blitter);	
++
++	//vid_blank();	
++	//vid_blit(g_screen_blitter, 0, 0);
++	//SDL_BlitSurface(g_screen_blitter, NULL, g_screen, NULL);
++	//vid_flip();
++	
+ }
+ 
+ void singe::set_last_error(const char *cpszErrMsg)
+@@ -440,32 +507,32 @@
+ 			{
+ 				if ((key == keydefs[move][0]) || (key == keydefs[move][1]))
+ 				{
+-					if (move != SWITCH_PAUSE) input_enable(move);
++					if (move != SWITCH_PAUSE) input_enable(move, NOMOUSE);
+ 				}
+ 			}
+ 
+ 		} else { // Using full keyboard access....
+ 			
+ 			if (key >= SDLK_a && key <= SDLK_z)	
+-				input_enable(key);	
++				input_enable(key, NOMOUSE);	
+ 			// check to see if key is a number on the top row of the keyboard (not keypad)
+ 			else if (key >= SDLK_MINUS && key <= SDLK_9) 
+-				input_enable(key);	
++				input_enable(key, NOMOUSE);	
+ 			// numeric keypad keys
+ 			else if (key >= SDLK_KP0 && key <= SDLK_KP_EQUALS) 
+-				input_enable(key);
++				input_enable(key, NOMOUSE);
+ 			// arrow keys and insert, delete, home, end, pgup, pgdown
+ 			else if (key >= SDLK_UP && key <= SDLK_PAGEDOWN) 
+-				input_enable(key);	
++				input_enable(key, NOMOUSE);	
+ 			// function keys
+ 			else if (key >= SDLK_F1 && key <= SDLK_F15) 
+-				input_enable(key);	
++				input_enable(key, NOMOUSE);	
+ 			// Key state modifier keys (left and right ctrls, alts)
+ 			else if (key >= SDLK_NUMLOCK && key <= SDLK_LMETA) 
+-				input_enable(key);	
++				input_enable(key, NOMOUSE);	
+ 			// International keys
+ 			else if (key >= SDLK_WORLD_0 && key <= SDLK_WORLD_95) 
+-				input_enable(key);				
++				input_enable(key, NOMOUSE);				
+ 			else
+ 			{
+ 
+@@ -480,7 +547,7 @@
+ 				{
+ 					if (key == i_full_keybd_defs[k])
+ 					{
+-						input_enable(key);
++						input_enable(key, NOMOUSE);
+ 						break;
+ 					} // end if
+ 
+@@ -511,9 +578,14 @@
+ 			// Handle pause and quit keypresses first.
+ 			if (key == keydefs[SWITCH_PAUSE][0] || key == keydefs[SWITCH_PAUSE][1]) 
+ 			{
+-				toggle_game_pause();						
+-				input_disable(SWITCH_PAUSE);
+-
++				if (g_game->get_pause_key_flag())  // rdg
++				{
++					g_game->toggle_game_pause();				
++					//input_disable(SWITCH_PAUSE, NOMOUSE);  // -1 is for no mouse.
++					
++				}
++				input_disable(SWITCH_PAUSE, NOMOUSE);  // -1 is for no mouse.
++				
+ 			} else if (key == keydefs[SWITCH_QUIT][0] || key == keydefs[SWITCH_QUIT][1]) {
+ 				
+ 				set_quitflag();	
+@@ -529,7 +601,7 @@
+ 				{
+ 					if ((key == keydefs[move][0]) || (key == keydefs[move][1]))
+ 					{
+-						if (move != SWITCH_PAUSE) input_disable(move);
++						if (move != SWITCH_PAUSE) input_disable(move, NOMOUSE);
+ 					}
+ 
+ 				} // end for
+@@ -543,25 +615,25 @@
+ 				set_quitflag();	
+ 			// letter keys
+ 			else if (key >= SDLK_a && key <= SDLK_z)	
+-				input_disable(key);	
++				input_disable(key, NOMOUSE);	
+ 			// check to see if key is a number on the top row of the keyboard (not keypad)
+ 			else if (key >= SDLK_MINUS && key <= SDLK_9)
+-				input_disable(key);			
++				input_disable(key, NOMOUSE);			
+ 			// numeric keypad keys
+ 			else if (key >= SDLK_KP0 && key <= SDLK_KP_EQUALS) 
+-				input_disable(key);	
++				input_disable(key, NOMOUSE);	
+ 			// arrow keys and insert, delete, home, end, pgup, pgdown
+ 			else if (key >= SDLK_UP && key <= SDLK_PAGEDOWN) 
+-				input_disable(key);	
++				input_disable(key, NOMOUSE);	
+ 			// function keys
+ 			else if (key >= SDLK_F1 && key <= SDLK_F15) 
+-				input_disable(key);	
++				input_disable(key, NOMOUSE);	
+ 			// Key state modifier keys (left and right ctrls, alts)
+ 			else if (key >= SDLK_NUMLOCK && key <= SDLK_LMETA) 
+-				input_disable(key);	
++				input_disable(key, NOMOUSE);	
+ 			// International keys
+ 			else if (key >= SDLK_WORLD_0 && key <= SDLK_WORLD_95) 
+-				input_disable(key);				
++				input_disable(key, NOMOUSE);				
+ 			else
+ 			{
+ 				/*
+@@ -575,7 +647,7 @@
+ 				{
+ 					if (key == i_full_keybd_defs[k])
+ 					{
+-						input_disable(key);
++						input_disable(key, NOMOUSE);
+ 						break;
+ 					} // end if
+ 
+@@ -588,3 +660,72 @@
+ 	} // endif	
+ 
+ }
++
++void singe::set_game_name(char *thisName) // Sets value of m_strName;
++{// basic_string& assign ( const charT* s, size_type n );
++	m_strName.clear();
++	m_strName.assign(thisName,MAX_TITLE_LENGTH);	
++}
++
++void singe::change_caption(char *thisName)
++{
++	char s1[100];
++	set_game_name(thisName);
++	sprintf(s1,"Singe v%.2f - %s", get_singe_version(), m_strName.c_str());
++	//sprintf(s1,"%s", m_strName.c_str());
++	SDL_WM_SetCaption(s1, "Singe");
++}
++
++void singe::set_script_path(const char *thisPath)
++{
++	string s1(thisPath);
++	string s2(thisPath);
++	size_t found = 9999;
++	found=s1.find_first_of("\\");
++	while (found <= 9999)
++	{		
++		if (found != 9999)
++		{
++			s2.erase();
++			s2.append(s1.substr(found+1,s1.length()));
++			s1 = s1.substr(0,found);
++			s1.append("/");
++			s1.append(s2.c_str());
++			found=s1.find_first_of("\\");
++		}
++	}
++	found=s1.find_last_of("/");
++	m_strScriptPath.erase();	
++	m_strScriptPath.append(s1.substr(0,found+1));
++
++}
++
++void singe::get_script_path(char *thisPath)
++{
++	sprintf(thisPath,"%.255s", m_strScriptPath.c_str());
++}
++
++/*
++void singe::set_script_path(const char *thisPath)
++{
++	string s1(thisPath);
++	string s2(thisPath);
++	size_t found = 9999;
++	found=s1.find_first_of("/");
++	while (found <= 9999)
++	{		
++		if (found != 9999)
++		{
++			s2.erase();
++			s2.append(s1.substr(found+1,s1.length()));
++			s1 = s1.substr(0,found);
++			s1.append("\\");
++			s1.append(s2.c_str());
++			found=s1.find_first_of("/");
++		}
++	}
++	m_strScriptPath.erase();	
++	m_strScriptPath.append(s1.c_str());
++
++}
++*/
+diff -ru ../../daphne/src/game/singe.h game/singe.h
+--- ../../daphne/src/game/singe.h	2019-12-18 17:49:40.204127771 +0000
++++ game/singe.h	2019-12-27 17:48:18.772862730 +0000
+@@ -27,6 +27,7 @@
+ #include "../io/error.h"
+ #include "../io/dll.h"
+ #include "../io/cmdline.h"  // for get_next_word  (rdg2010)
++#include "../io/input.h"    // for set_mouse_mode rdg
+ #include "../ldp-out/ldp.h"
+ #include "../sound/samples.h"
+ #include "../video/palette.h"
+@@ -38,7 +39,9 @@
+ using namespace std;
+ 
+ // by rdg2010
+-#define SINGE_VERSION 1.14  // Update this number whenever you issue a major change
++// INCREASE THIS NUMBER EVERY TIME YOU CHANGE SOMETHING IN SINGE!!!
++#define SINGE_VERSION 1.18
++#define NOMOUSE -1
+ enum { KEYBD_NORMAL, KEYBD_FULL };
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -50,9 +53,9 @@
+ 	bool init();
+ 	void start();
+ 	void shutdown();
+-	void input_enable(Uint8);
+-	void input_disable(Uint8);
+-	void OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel);
++	void input_enable(Uint8, int);
++	void input_disable(Uint8, int);
++	void OnMouseMotion(Uint16 x, Uint16 y, Sint16 xrel, Sint16 yrel, Uint16 mouseID);
+ 	bool handle_cmdline_arg(const char *arg);
+ 	void palette_calculate();
+ 	void video_repaint();
+@@ -77,37 +80,75 @@
+ 	{
+ 		return g_ldp->pre_search(cpszFrame, block_until_search_finished);
+ 	}
+-	static void framenum_to_frame(Uint16 u16Frame, char *pszFrame) { g_ldp->framenum_to_frame(u16Frame, pszFrame); }
+-	static bool pre_skip_forward(Uint16 u16Frames) { return g_ldp->pre_skip_forward(u16Frames); }
+-	static bool pre_skip_backward(Uint16 u16Frames) { return g_ldp->pre_skip_backward(u16Frames); }
++	static void framenum_to_frame(Uint32 u16Frame, char *pszFrame) { g_ldp->framenum_to_frame(u16Frame, pszFrame); }
++	static bool pre_skip_forward(Uint32 u16Frames) { return g_ldp->pre_skip_forward(u16Frames); }
++	static bool pre_skip_backward(Uint32 u16Frames) { return g_ldp->pre_skip_backward(u16Frames); }
+ 	static void pre_step_forward() { g_ldp->pre_step_forward(); }
+ 	static void pre_step_backward() { g_ldp->pre_step_backward(); }
+ 	
+ 	// by RDG2010
+ 	// Sometimes it's useful to know the status of the vldp.	
+ 	// Lets give Singe the ability to query for this.
+-	static int get_status() { return g_ldp->get_status(); }
++	static int get_vldp_status() { return g_ldp->get_status(); }
+ 	static double get_singe_version();  // Returns version of the Singe engine	
+ 	// Controls VLDP message displays on daphne_log.txt
+ 	static void set_ldp_verbose(bool thisBol) { g_ldp->setVerbose(thisBol); }
+ 	
+-	// These wrapper functions makes the function set_keyboard_mode and get_keyboard_mode 
++	// These wrapper functions make the functions set_keyboard_mode and get_keyboard_mode 
+ 	// available for the DLL/so library side of SINGE. 
+ 	// Take a look at the comments in singe::init on singe.cpp for more info.
+-	// 
+-	// GFM - Get For Me
+-	static void gfm_set_keyboard_mode(void *pInstance, int thisVal)
++	// 	
++	static void daphne_side_set_keyboard_mode(void *pInstance, int thisVal)
+ 	{
+ 		singe *pSingeInstance = (singe *) pInstance; 
+ 		pSingeInstance->set_keyboard_mode(thisVal);
+ 	}
+ 
+-	static int gfm_get_keyboard_mode(void *pInstance)
++	static int daphne_side_get_keyboard_mode(void *pInstance)
+ 	{
+ 		singe *pSingeInstance = (singe *) pInstance; 
+ 		return pSingeInstance->get_keyboard_mode();
+ 	}
+ 
++	static void daphne_side_get_script_path(void *pInstance, char *thisVal)
++	{
++		singe *pSingeInstance = (singe *) pInstance; 
++		pSingeInstance->get_script_path(thisVal);
++	}
++
++	static void daphne_side_mouse_enable(void *pInstance)
++	{ 
++		singe *pSingeInstance = (singe *) pInstance; 
++		pSingeInstance->m_bMouseEnabled = true;
++	}
++	static void daphne_side_mouse_disable(void *pInstance)
++	{
++		singe *pSingeInstance = (singe *) pInstance; 
++		pSingeInstance->m_bMouseEnabled = false;
++	}
++	static int daphne_side_mouse_get_how_many(void *pInstance)
++	{
++		singe *pSingeInstance = (singe *) pInstance; 
++		return pSingeInstance->get_mice_detected();
++	}
++	static bool daphne_side_set_mouse_mode(int thisVal)
++	{
++		//singe *pSingeInstance = (singe *) pInstance; 
++		return set_mouse_mode(thisVal);
++	}
++
++	static void daphne_side_pause_enable(void *pInstance)
++	{ 
++		singe *pSingeInstance = (singe *) pInstance; 
++		pSingeInstance->m_bPauseKeyEnabled = true;
++	}
++	static void daphne_side_pause_disable(void *pInstance)
++	{
++		singe *pSingeInstance = (singe *) pInstance; 
++		pSingeInstance->m_bPauseKeyEnabled = false;
++		
++	}
++
+ 	void set_keyboard_mode(int); // Sets value of private member i_keyboard_mode
+ 	int get_keyboard_mode();     // Retrieves the value of i_keyboard_mode	
+ 
+@@ -116,12 +157,25 @@
+ 	void process_keydown(SDLKey, int [][2]);
+ 	void process_keyup  (SDLKey, int [][2]);
+ 
++	void set_game_name(char *); // Changes the value of private member m_strName;
++	void change_caption(char *thisName); // Adds the name of the singe game to the window's title bar.
++	static void daphne_side_set_caption(void *pInstance, char *thisName) // Sets value of m_strName
++	{
++		singe *pSingeInstance = (singe *) pInstance;
++		pSingeInstance->change_caption(thisName);
++
++	}	
++
++	void set_script_path(const char *);	
++	void get_script_path(char *);
++
+ private:
+ 	// callback function for singe to pass error messages to us
+ 	static void set_last_error(const char *cpszErrMsg);
+ 
+ 	string m_strName;	// name of the game	
+ 	string m_strGameScript;	// script name for the game
++	string m_strScriptPath;	// script name for the game
+ 
+ 	DLL_INSTANCE m_dll_instance;	// pointer to DLL we load (if we aren't statically linked)
+ 	

@@ -1,0 +1,36 @@
+diff -ru a/src/ldp-out/ldp-vldp.cpp b/src/ldp-out/ldp-vldp.cpp
+--- a/src/ldp-out/ldp-vldp.cpp	2019-12-01 15:02:22.468075644 +0000
++++ b/src/ldp-out/ldp-vldp.cpp	2019-12-04 17:28:40.217760140 +0000
+@@ -67,6 +67,7 @@
+ 
+ // video overlay stuff
+ Sint32 g_vertical_offset = 0;	// (used a lot, we only want to calc it once)
++Sint32 p_vertical_offset = 0;	// Used as a positive respresentation of g_vertical_offset
+ 
+ double g_dPercentComplete01 = 0.0;	// send by child thread to indicate how far our parse is complete
+ bool g_bGotParseUpdate = false;	// if true, it means we've received a parse update from VLDP
+@@ -223,6 +224,9 @@
+ 							// this number is used repeatedly, so we calculate it once
+ 							g_vertical_offset = g_game->get_video_row_offset();
+ 
++							// Get the offset as a positive integer if g_vertical_offset is negative
++							if (g_vertical_offset < 0) p_vertical_offset = abs(g_vertical_offset);
++
+ 							// if testing has been requested then run them ...
+ 							if (m_testing)
+ 							{
+@@ -1727,9 +1731,11 @@
+ 		if ((gamevid->w << 1) == g_hw_overlay->w)
+ 		{
+ 			// adjust for vertical offset
+-			// We use _half_ of the requested vertical offset because the mpeg video is twice
+-			// the size of the overlay
+-			Uint8 *gamevid_pixels = (Uint8 *) gamevid->pixels - (gamevid->w * (g_vertical_offset - g_vertical_stretch));
++			// We use _half_ of the requested vertical offset because the mpeg video is twice the size of the overlay
++			// We get segfault on negative vertical offset, so negate the negative to align correctly + check.
++			int checked_offset = ((g_vertical_offset - g_vertical_stretch) + (p_vertical_offset * 2));
++			if (checked_offset < 0) checked_offset = 0;
++			Uint8 *gamevid_pixels = (Uint8 *) gamevid->pixels + (gamevid->w * checked_offset);
+ 			
+ #ifdef DEBUG
+ 			// make sure that the g_vertical_offset isn't out of bounds

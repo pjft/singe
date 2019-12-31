@@ -1,0 +1,137 @@
+diff -ru a/src/io/cmdline.cpp b/src/io/cmdline.cpp
+--- a/src/io/cmdline.cpp	2019-12-28 13:33:18.641648853 +0000
++++ b/src/io/cmdline.cpp	2019-12-28 02:28:56.915638013 +0000
+@@ -355,6 +355,60 @@
+ 				result = false;
+ 			}
+ 		}
++
++		// specify an alternate singeinput.ini file (located in home or app directory)
++		else if (strcasecmp(s, "-keymapfile")==0)
++		{
++
++			bool loadini = true;
++			int iLen, k;
++
++			get_next_word(s, sizeof(s));
++			iLen = strlen(s);
++
++			if (iLen < 5)
++			{
++				printline("WARNING : specified keymap file too short to be an '.ini' file. Ignoring.");
++				loadini = false;
++			}
++
++			if (loadini)
++			{
++
++				for(k=0;k<iLen;k++)
++					s[k] = tolower(s[k]);
++
++				string s1(s);
++				string s2(s1.substr(s1.length()-4));
++
++				if (s2.compare(".ini") != 0)
++				{
++					printline("WARNING : specified keymap file does not end with a '.ini' extension. Ignoring.");
++					loadini = false;
++				}
++
++				if (loadini)
++				{
++					string s3 = s1.substr(0, s1.size()-4);
++					for (int i = 0; s3[i] != '\0'; i++)
++					{
++						if (!isalnum(s3[i]))
++						{
++							loadini = false;
++						}
++					}
++
++					if (loadini)
++					{
++						set_inputini_file(s);
++
++					} else {
++						printline("WARNING : specified keymap file has invalid characters in filename. Ignoring.");
++					}
++
++				}
++			}
++		}
+ 		
+ 		// if they are defining an alternate soundtrack to be used by VLDP
+ 		else if (strcasecmp(s, "-altaudio")==0)
+@@ -548,6 +602,14 @@
+ 
+ 			get_next_word(s, sizeof(s));
+ 			i = atoi(s);
++			if (i > 50) {
++				i=50;
++				printline("WARNING: vertical stretch restricted to 50 max.");
++			}
++			if (i < 0) {
++				i=0;
++				printline("WARNING: vertical stretch cannot be negative. zeroed.");
++			}
+ 			if (the_ldp != NULL)
+ 			{
+ 				the_ldp->set_vertical_stretch(i);
+diff -ru a/src/io/input.cpp b/src/io/input.cpp
+--- a/src/io/input.cpp	2019-12-28 13:33:18.641648853 +0000
++++ b/src/io/input.cpp	2019-12-28 10:30:43.662862974 +0000
+@@ -62,6 +62,9 @@
+ bool g_alt_pressed = false;	// whether the ALT key is presssed (for ALT-Enter combo)
+ unsigned int idle_timer; // added by JFA for -idleexit
+ 
++string g_inputini_file = "singeinput.ini"; // Default keymap file
++bool m_altInputFileSet = false;
++
+ const double STICKY_COIN_SECONDS = 0.125;	// how many seconds a coin acceptor is forced to be "depressed" and how many seconds it is forced to be "released"
+ Uint32 g_sticky_coin_cycles = 0;	// STICKY_COIN_SECONDS * get_cpu_hz(0), cannot be calculated statically
+ queue<struct coin_input> g_coin_queue;	// keeps track of coin input to guarantee that coins don't get missed if the cpu is busy (during seeks for example)
+@@ -191,11 +194,19 @@
+ 	string cur_line = "";
+ 	string key_name = "", sval1 = "", sval2 = "", sval3 = "", eq_sign = "";
+ 	int val1 = 0, val2 = 0, val3 = 0;
+-//	bool done = false;
++	string keyinput_notice;
++
++	if (m_altInputFileSet) {
++		keyinput_notice = "Loading alternate keymap file: ";
++	} else {
++		keyinput_notice = "Looking for: ";
++	}
+ 
+-	// find where the dapinput ini file is (if the file doesn't exist, this string will be empty)
+-	string strDapInput = g_homedir.find_file("dapinput.ini", true);
++	keyinput_notice += g_inputini_file.c_str();
++	printline(keyinput_notice.c_str());
+ 
++	// find where the keymap ini file is (if the file doesn't exist, this string will be empty)
++	string strDapInput = g_homedir.find_file(g_inputini_file.c_str(), true);
+ 	io = mpo_open(strDapInput.c_str(), MPO_OPEN_READONLY);
+ 	if (io)
+ 	{
+@@ -1148,3 +1159,10 @@
+ 	return result;
+ 
+ }
++
++// Allow us to specify an alternate keymap.ini file
++void set_inputini_file(const char *inputFile)
++{
++	m_altInputFileSet = true;
++	g_inputini_file = inputFile;
++}
+diff -ru a/src/io/input.h b/src/io/input.h
+--- a/src/io/input.h	2019-12-28 13:33:18.641648853 +0000
++++ b/src/io/input.h	2019-12-27 17:05:16.120761544 +0000
+@@ -124,6 +124,7 @@
+ void reset_idle(void); // added by JFA
+ void set_use_joystick(bool val);
+ bool set_mouse_mode(int);
++void set_inputini_file(const char *inputFile);
+ 
+ #endif // INPUT_H
+ 

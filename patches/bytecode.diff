@@ -1,0 +1,85 @@
+diff -ru a/src/game/singe/ldump.c b/src/game/singe/ldump.c
+--- a/src/game/singe/ldump.c	2019-11-11 20:53:02.000000000 +0000
++++ b/src/game/singe/ldump.c	2019-12-21 18:27:44.800454308 +0000
+@@ -26,7 +26,7 @@
+ #define DumpMem(b,n,size,D)	DumpBlock(b,(n)*(size),D)
+ #define DumpVar(x,D)	 	DumpMem(&x,1,sizeof(x),D)
+ 
+-static void DumpBlock(const void* b, size_t size, DumpState* D)
++static void DumpBlock(const void* b, LUAC_STR_SIZE_TYPE size, DumpState* D)
+ {
+  if (D->status==0)
+  {
+@@ -52,7 +52,7 @@
+  DumpVar(x,D);
+ }
+ 
+-static void DumpVector(const void* b, int n, size_t size, DumpState* D)
++static void DumpVector(const void* b, int n, LUAC_STR_SIZE_TYPE size, DumpState* D)
+ {
+  DumpInt(n,D);
+  DumpMem(b,n,size,D);
+@@ -62,12 +62,12 @@
+ {
+  if (s==NULL || getstr(s)==NULL)
+  {
+-  size_t size=0;
++  LUAC_STR_SIZE_TYPE size=0;
+   DumpVar(size,D);
+  }
+  else
+  {
+-  size_t size=s->tsv.len+1;		/* include trailing '\0' */
++  LUAC_STR_SIZE_TYPE size=s->tsv.len+1;		/* include trailing '\0' */
+   DumpVar(size,D);
+   DumpBlock(getstr(s),size,D);
+  }
+diff -ru a/src/game/singe/lundump.c b/src/game/singe/lundump.c
+--- a/src/game/singe/lundump.c	2019-11-11 20:53:02.000000000 +0000
++++ b/src/game/singe/lundump.c	2019-12-21 18:27:21.407861731 +0000
+@@ -45,9 +45,9 @@
+ #define LoadVar(S,x)		LoadMem(S,&x,1,sizeof(x))
+ #define LoadVector(S,b,n,size)	LoadMem(S,b,n,size)
+ 
+-static void LoadBlock(LoadState* S, void* b, size_t size)
++static void LoadBlock(LoadState* S, void* b, LUAC_STR_SIZE_TYPE size)
+ {
+- size_t r=luaZ_read(S->Z,b,size);
++ LUAC_STR_SIZE_TYPE r=luaZ_read(S->Z,b,size);
+  IF (r!=0, "unexpected end");
+ }
+ 
+@@ -75,7 +75,7 @@
+ 
+ static TString* LoadString(LoadState* S)
+ {
+- size_t size;
++ LUAC_STR_SIZE_TYPE size;
+  LoadVar(S,size);
+  if (size==0)
+   return NULL;
+@@ -220,7 +220,7 @@
+  *h++=(char)LUAC_FORMAT;
+  *h++=(char)*(char*)&x;				/* endianness */
+  *h++=(char)sizeof(int);
+- *h++=(char)sizeof(size_t);
++ *h++=(char)sizeof(LUAC_STR_SIZE_TYPE);
+  *h++=(char)sizeof(Instruction);
+  *h++=(char)sizeof(lua_Number);
+  *h++=(char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
+diff -ru a/src/game/singe/lundump.h b/src/game/singe/lundump.h
+--- a/src/game/singe/lundump.h	2019-11-11 20:53:02.000000000 +0000
++++ b/src/game/singe/lundump.h	2019-12-21 18:26:46.718983360 +0000
+@@ -10,6 +10,12 @@
+ #include "lobject.h"
+ #include "lzio.h"
+ 
++/* default */
++/* #define LUAC_STR_SIZE_TYPE size_t */
++
++/* for 32 bit compatible bytecode */
++#define LUAC_STR_SIZE_TYPE int
++
+ /* load one chunk; from lundump.c */
+ LUAI_FUNC Proto* luaU_undump (lua_State* L, ZIO* Z, Mbuffer* buff, const char* name);
+ 
