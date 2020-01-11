@@ -270,8 +270,8 @@ int main(int argc, char **argv)
 	{
 		char s1[500];
 		sprintf(s1,"Bad command line or initialization problem (see daphne_log.txt for details).\n");
-		sprintf(s1,"%sTo run SINGE, you must specify which script to run.\n\n",s1);
-		sprintf(s1,"%sE,g., singe.exe myscript.singe",s1);
+		strncat(s1,"To run SINGE, you must specify which script to run.\n\n", sizeof(s1) - strlen(s1));
+		strncat(s1,"e.g. singe myscript.singe\n", sizeof(s1) - strlen(s1));
 		printerror(s1);
 	}
 

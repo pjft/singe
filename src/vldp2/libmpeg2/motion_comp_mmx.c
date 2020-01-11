@@ -63,13 +63,13 @@ static mmx_t round4 = {0x0002000200020002LL};
  * unrolling will help
  */
 
-static inline void mmx_zero_reg ()
+static void mmx_zero_reg ()
 {
     /* load 0 into mm0 */
     pxor_r2r (mm0, mm0);
 }
 
-static inline void mmx_average_2_U8 (uint8_t * dest, const uint8_t * src1,
+static void mmx_average_2_U8 (uint8_t * dest, const uint8_t * src1,
 				     const uint8_t * src2)
 {
     /* *dest = (*src1 + *src2 + 1)/ 2; */
@@ -88,7 +88,7 @@ static inline void mmx_average_2_U8 (uint8_t * dest, const uint8_t * src1,
     movq_r2m (mm4, *dest);	/* store result in dest */
 }
 
-static inline void mmx_interp_average_2_U8 (uint8_t * dest,
+static void mmx_interp_average_2_U8 (uint8_t * dest,
 					    const uint8_t * src1,
 					    const uint8_t * src2)
 {
@@ -118,7 +118,7 @@ static inline void mmx_interp_average_2_U8 (uint8_t * dest,
     movq_r2m (mm6, *dest);	/* store result in dest */
 }
 
-static inline void mmx_average_4_U8 (uint8_t * dest, const uint8_t * src1,
+static void mmx_average_4_U8 (uint8_t * dest, const uint8_t * src1,
 				     const uint8_t * src2,
 				     const uint8_t * src3,
 				     const uint8_t * src4)
@@ -171,7 +171,7 @@ static inline void mmx_average_4_U8 (uint8_t * dest, const uint8_t * src1,
     movq_r2m (mm1, *dest);	/* store result in dest */
 }
 
-static inline void mmx_interp_average_4_U8 (uint8_t * dest,
+static void mmx_interp_average_4_U8 (uint8_t * dest,
 					    const uint8_t * src1,
 					    const uint8_t * src2,
 					    const uint8_t * src3,
@@ -237,7 +237,7 @@ static inline void mmx_interp_average_4_U8 (uint8_t * dest,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_avg_mmx (const int width, int height, uint8_t * dest,
+static void MC_avg_mmx (const int width, int height, uint8_t * dest,
 			       const uint8_t * ref, const int stride)
 {
     mmx_zero_reg ();
@@ -267,7 +267,7 @@ static void MC_avg_o_8_mmx (uint8_t * dest, const uint8_t * ref,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_put_mmx (const int width, int height, uint8_t * dest,
+static void MC_put_mmx (const int width, int height, uint8_t * dest,
 			       const uint8_t * ref, const int stride)
 {
     mmx_zero_reg ();
@@ -302,7 +302,7 @@ static void MC_put_o_8_mmx (uint8_t * dest, const uint8_t * ref,
 /*-----------------------------------------------------------------------*/
 
 /* Half pixel interpolation in the x direction */
-static inline void MC_avg_x_mmx (const int width, int height, uint8_t * dest,
+static void MC_avg_x_mmx (const int width, int height, uint8_t * dest,
 				 const uint8_t * ref, const int stride)
 {
     mmx_zero_reg ();
@@ -332,7 +332,7 @@ static void MC_avg_x_8_mmx (uint8_t * dest, const uint8_t * ref,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_put_x_mmx (const int width, int height, uint8_t * dest,
+static void MC_put_x_mmx (const int width, int height, uint8_t * dest,
 				 const uint8_t * ref, const int stride)
 {
     mmx_zero_reg ();
@@ -362,7 +362,7 @@ static void MC_put_x_8_mmx (uint8_t * dest, const uint8_t * ref,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_avg_xy_mmx (const int width, int height, uint8_t * dest,
+static void MC_avg_xy_mmx (const int width, int height, uint8_t * dest,
 				  const uint8_t * ref, const int stride)
 {
     const uint8_t * ref_next = ref + stride;
@@ -396,7 +396,7 @@ static void MC_avg_xy_8_mmx (uint8_t * dest, const uint8_t * ref,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_put_xy_mmx (const int width, int height, uint8_t * dest,
+static void MC_put_xy_mmx (const int width, int height, uint8_t * dest,
 				  const uint8_t * ref, const int stride)
 {
     const uint8_t * ref_next = ref + stride;
@@ -429,7 +429,7 @@ static void MC_put_xy_8_mmx (uint8_t * dest, const uint8_t * ref,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_avg_y_mmx (const int width, int height, uint8_t * dest,
+static void MC_avg_y_mmx (const int width, int height, uint8_t * dest,
 				 const uint8_t * ref, const int stride)
 {
     const uint8_t * ref_next = ref + stride;
@@ -462,7 +462,7 @@ static void MC_avg_y_8_mmx (uint8_t * dest, const uint8_t * ref,
 
 /*-----------------------------------------------------------------------*/
 
-static inline void MC_put_y_mmx (const int width, int height, uint8_t * dest,
+static void MC_put_y_mmx (const int width, int height, uint8_t * dest,
 				 const uint8_t * ref, const int stride)
 {
     const uint8_t * ref_next = ref + stride;
@@ -524,7 +524,7 @@ do {					\
 /* CPU_MMXEXT code */
 
 
-static inline void MC_put1_8 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_put1_8 (int height, uint8_t * dest, const uint8_t * ref,
 			      const int stride)
 {
     do {
@@ -535,7 +535,7 @@ static inline void MC_put1_8 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_put1_16 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_put1_16 (int height, uint8_t * dest, const uint8_t * ref,
 			       const int stride)
 {
     do {
@@ -548,7 +548,7 @@ static inline void MC_put1_16 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_avg1_8 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_avg1_8 (int height, uint8_t * dest, const uint8_t * ref,
 			      const int stride, const int cpu)
 {
     do {
@@ -560,7 +560,7 @@ static inline void MC_avg1_8 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_avg1_16 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_avg1_16 (int height, uint8_t * dest, const uint8_t * ref,
 			       const int stride, const int cpu)
 {
     do {
@@ -575,7 +575,7 @@ static inline void MC_avg1_16 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_put2_8 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_put2_8 (int height, uint8_t * dest, const uint8_t * ref,
 			      const int stride, const int offset,
 			      const int cpu)
 {
@@ -588,7 +588,7 @@ static inline void MC_put2_8 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_put2_16 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_put2_16 (int height, uint8_t * dest, const uint8_t * ref,
 			       const int stride, const int offset,
 			       const int cpu)
 {
@@ -604,7 +604,7 @@ static inline void MC_put2_16 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_avg2_8 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_avg2_8 (int height, uint8_t * dest, const uint8_t * ref,
 			      const int stride, const int offset,
 			      const int cpu)
 {
@@ -618,7 +618,7 @@ static inline void MC_avg2_8 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_avg2_16 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_avg2_16 (int height, uint8_t * dest, const uint8_t * ref,
 			       const int stride, const int offset,
 			       const int cpu)
 {
@@ -638,7 +638,7 @@ static inline void MC_avg2_16 (int height, uint8_t * dest, const uint8_t * ref,
 
 static mmx_t mask_one = {0x0101010101010101LL};
 
-static inline void MC_put4_8 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_put4_8 (int height, uint8_t * dest, const uint8_t * ref,
 			      const int stride, const int cpu)
 {
     movq_m2r (*ref, mm0);
@@ -677,7 +677,7 @@ static inline void MC_put4_8 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_put4_16 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_put4_16 (int height, uint8_t * dest, const uint8_t * ref,
 			       const int stride, const int cpu)
 {
     do {
@@ -723,7 +723,7 @@ static inline void MC_put4_16 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_avg4_8 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_avg4_8 (int height, uint8_t * dest, const uint8_t * ref,
 			      const int stride, const int cpu)
 {
     do {
@@ -752,7 +752,7 @@ static inline void MC_avg4_8 (int height, uint8_t * dest, const uint8_t * ref,
     } while (--height);
 }
 
-static inline void MC_avg4_16 (int height, uint8_t * dest, const uint8_t * ref,
+static void MC_avg4_16 (int height, uint8_t * dest, const uint8_t * ref,
 			       const int stride, const int cpu)
 {
     do {

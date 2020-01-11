@@ -63,6 +63,7 @@ Sample mpeg2 byte sequence: 00 00 01 B5 25 06 06 06 0B 42 0F 00
 #include <stdio.h>
 #include <stdlib.h>	// for malloc
 #include "mpegscan.h"
+#include "vldp_internal.h"
 
 unsigned char g_last_three[3] = { 0 };		// the last 3 bytes read
 unsigned int g_last_three_loc[3] = { 0 };	// the position of the last 3 bytes read

@@ -82,7 +82,7 @@ static void null_draw_frame (vo_instance_t *instance, uint8_t * const * buf, voi
 				// this is the potentially expensive callback that gets the hardware overlay
 				// ready to be displayed, so we do this before we sleep
 				// NOTE : if this callback fails, we don't want to display the frame due to double buffering considerations
-				if (g_in_info->prepare_frame(&g_yuv_buf[(int) id]))
+				if (g_in_info->prepare_frame(&g_yuv_buf[(long) id]))
 				{
 #ifndef VLDP_BENCHMARK
 				
@@ -133,7 +133,7 @@ static void null_draw_frame (vo_instance_t *instance, uint8_t * const * buf, voi
 #endif
 						// draw the frame
 						// we are using the pointer 'id' as an index, kind of risky, but convenient :)
-						g_in_info->display_frame(&g_yuv_buf[(int) id]);
+						g_in_info->display_frame(&g_yuv_buf[(long) id]);
 #ifndef VLDP_BENCHMARK
 					} // end if we didn't get a new command to interrupt the frame being displayed
 #endif
@@ -271,8 +271,9 @@ static void null_draw_frame (vo_instance_t *instance, uint8_t * const * buf, voi
 static void null_setup_fbuf (vo_instance_t * _instance,
 			    uint8_t ** buf, void ** id)
 {
-	static buffer_index = 0;
-	*id = (int *) buffer_index;	// THIS IS A LITTLE TRICKY
+	static intptr_t buffer_index = 0;
+	*id = (intptr_t *) buffer_index;	// THIS IS A LITTLE TRICKY
+
 	// We are setting an integer value to a pointer ...
 	// Because it is convenient to let the pointer hold the value of this integer for us
 	// Hopefully it doesn't cause any trouble later ;)

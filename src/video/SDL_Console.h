@@ -4,8 +4,8 @@
 
 #include "SDL_ConsoleCommands.h"
 
-
-#define CHARS_PER_LINE	128
+// We allocate 256 on ConOut(const char *str, ... ) - Make it global..
+#define CHARS_PER_LINE	256
 
 #ifdef __cplusplus
 extern "C" {

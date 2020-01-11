@@ -40,7 +40,7 @@ const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
     return &(mpeg2dec->info);
 }
 
-static inline int skip_chunk (mpeg2dec_t * mpeg2dec, int bytes)
+static int skip_chunk (mpeg2dec_t * mpeg2dec, int bytes)
 {
     uint8_t * current;
     uint32_t shift;
@@ -74,7 +74,7 @@ static inline int skip_chunk (mpeg2dec_t * mpeg2dec, int bytes)
     return 0;
 }
 
-static inline int copy_chunk (mpeg2dec_t * mpeg2dec, int bytes)
+static int copy_chunk (mpeg2dec_t * mpeg2dec, int bytes)
 {
     uint8_t * current;
     uint32_t shift;
@@ -116,7 +116,7 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
     mpeg2dec->buf_end = end;
 }
 
-static inline int seek_chunk (mpeg2dec_t * mpeg2dec)
+static int seek_chunk (mpeg2dec_t * mpeg2dec)
 {
     int size, skipped;
 

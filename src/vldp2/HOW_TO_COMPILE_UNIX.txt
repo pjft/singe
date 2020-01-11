@@ -10,12 +10,7 @@ automake/autoconf.
 
 So to compile under linux, you'd do:
 
-	./configure
+	./configure --disable-accel-detect
 	make -f Makefile.linux
-
-Compiling under Mac OSX is similar:
-
-	./configure
-	make -f Makefile.osx
 
 That's all it takes.

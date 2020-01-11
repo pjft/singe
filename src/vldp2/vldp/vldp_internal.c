@@ -30,6 +30,7 @@
 //#include <unistd.h>
 //#include "inttypesreplace.h"
 #include <SDL.h>
+#include <sys/unistd.h>
 
 #include "vldp_internal.h"
 #include "vldp_common.h"

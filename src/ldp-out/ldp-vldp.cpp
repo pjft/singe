@@ -1492,18 +1492,19 @@ Uint64 ldp_vldp::get_audio_sample_position(unsigned int uTargetMpegFrame)
 //  return frames if they are at the same FPS (which hopefully they are hehe)
 Uint32 ldp_vldp::mpeg_info (string &filename, Uint32 ld_frame)
 {
+	long ld_frames = (int32_t)ld_frame;
 	unsigned int index = 0;
 	Uint32 mpeg_frame = 0;	// which mpeg frame to seek (assuming mpeg and disc have same FPS)
 	filename = "";	// blank 'filename' means error, so we default to this condition for safety reasons
-	
+
 	// find the mpeg file that has the LD frame inside of it
-	while ((index+1 < m_file_index) && (ld_frame >= m_mpeginfo[index+1].frame))
+	while ((index+1 < m_file_index) && (ld_frames >= m_mpeginfo[index+1].frame))
 	{
 		index = index + 1;
 	}
 
 	// make sure that the frame they've requested comes after the first frame in our framefile
-	if (ld_frame >= m_mpeginfo[index].frame)
+	if (ld_frames >= m_mpeginfo[index].frame)
 	{
 		// make sure a filename exists (when can this ever fail? verify!)
 		if (m_mpeginfo[index].name != "")

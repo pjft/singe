@@ -309,6 +309,7 @@ static void ManyMouse_Init_Mice(void)
 	printline("Using ManyMouse for mice input.");
 	available_mice = ManyMouse_Init();
 	g_game->set_mice_detected(available_mice);
+	static Mouse mice[MAX_MICE];
 
     if (available_mice > MAX_MICE)
         available_mice = MAX_MICE;
@@ -350,6 +351,7 @@ static void ManyMouse_Update_Mice()
         if (mm_event.device >= (unsigned int) available_mice)
             continue;
 
+        static Mouse mice[MAX_MICE];
         mouse = &mice[mm_event.device];
 
         if (mm_event.type == MANYMOUSE_EVENT_RELMOTION)
@@ -370,12 +372,6 @@ static void ManyMouse_Update_Mice()
 
         else if (mm_event.type == MANYMOUSE_EVENT_ABSMOTION)
         {
-			
-			
-			
-            float val = (float) (mm_event.value - mm_event.minval);
-            float maxval = (float) (mm_event.maxval - mm_event.minval);
-			
 			
             if (mm_event.item == 0)
                 //mouse->x = (val / maxval) * screen_w;
@@ -406,7 +402,6 @@ static void ManyMouse_Update_Mice()
 						mouse->x = absPoint->x;
 					
 				}
-				/*
 				else if (mm_event.item == 1)
 				{
 					absPoint.y = mm_event.value;
@@ -1128,7 +1123,7 @@ bool set_mouse_mode(int thisMode)
 		{			
 			g_mouse_mode = thisMode;
 			result = true;
-			memset(mouse_buttons_map, 0, 6); // Erase array
+			memset(mouse_buttons_map, 0, sizeof(mouse_buttons_map)); // Erase array
 			if (thisMode == SDL_MOUSE) 
 			{
 				

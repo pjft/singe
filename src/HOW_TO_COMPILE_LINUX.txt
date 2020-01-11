@@ -1,12 +1,8 @@
-At the time of this writing, DAPHNE will compile fully under these unix'ish
-platforms:
-- Ubuntu Linux version 11.04 (x86)
-- i386 GNU/Linux (primary platform)
-- i386 FreeBSD
-- Sparc Solaris (untested)
 
-MAC OSX USERS SHOULD USE THE XCODE PROJ INSIDE THE MACOSX DIRECTORY!!!
-The MAC OSX Makefile method is obsolete and is no longer maintained!
+At the time of this writing, SINGE will compile fully under these platforms:
+
+- Debian Linux 9/10 (x86_64)
+- Raspbian 9/10 (armv7l)
 
 --------------------------
 STEP BY STEP INSTRUCTIONS:
@@ -15,6 +11,12 @@ STEP BY STEP INSTRUCTIONS:
 - Make sure you have g++, make, and sed installed.
 
 - Install these libraries (with headers) if you don't already have them:
+
+        apt-get install libasound2-dev libcaca-dev libglew-dev libglib2.0-dev libogg-dev \
+        libpcre3-dev libpcre32-3 libpng-dev libpng-tools libpulse-dev libsdl-image1.2-dev \
+        libsdl-ttf2.0-dev libsdl1.2-dev libslang2-dev libvorbis-dev libxi-dev pkg-config
+
+	Providing these requirements:
 	SDL 1.2 (tested with 1.2.14, older versions may work fine)
 		SDL NOTE:
 		To have minimum hardware acceleration, SDL needs to be built with "xv" support.
@@ -24,51 +26,17 @@ STEP BY STEP INSTRUCTIONS:
 	libfreetype6-dev
 	Ogg Vorbis (libogg, libvorbis, libvorbisfile)
 	Zlib
-	GLEW (http://glew.sourceforge.net)
+	GLEW
 
-- You will most likely have to convert the source files line endings to Unix format.
-Install dos2unix or similar tool for this.
+- Now you are ready to compile.
 
-- Now you are ready to compile. Daphne doesn't use the traditional
-autoconf/automake nonsense.  Instead, it uses a separate Makefile for
-each platform.  To compile under GNU/Linux, open up a termianl window and
-type this (from the src directory):
-
-	cp Makefile.vars.linux_x86 Makefile.vars
-	make
-
-(You'd do something similar if you were compiling under the other platforms.)
-
-- You also need to compile libvldp2.so which comes with DAPHNE and has its
-own set of instructions inside the vldp2 directory. When you get there
-type:
-
-	chmod +x configure
-	./configure
-	make -f Makefile.linux
-
-- If compiling SINGE then you also need to comple libsinge.so separately
-before making Daphne. Go to the game/singe folder and type:
-
-make -f Makefile.linux
-
-- Once you got your libraries compiled then return to the main "src"
-directory. Begin the compiling process by typing "make".
-
------------------------------------------------------------------------------
-
-An alternate way...
-
-Go to the "src" folder and rename the appropriate Makefile.vars.linux_x??
-to Makefile.vars. Open up a terminal window and type the following:
-
-	chmod +x buildme.sh
-	./buildme.sh
-
-
-If everything goes correctly it should compile daphne with the vldp2
-and singe libraries.
-
+       cd src/vldp2
+       ./configure --disable-accel-detect
+       make -f Makefile.linux
+       cd ../game/singe
+       make -f Makefile.linux
+       cd ../..
+       make
 
 ---------------------- LINUX QUESTIONS -------------------------
 
@@ -83,7 +51,3 @@ Another way is to copy libvldp2.so and linsinge.so to /usr/lib.
 	sudo cp libvldp2.so /usr/lib
 	sudo cp libsinge.so /usr/lib
 
-+ Daphne hangs after quitting.
-
-This is a known issue with static singe builds under linux.
-Use a dynamic build instead.

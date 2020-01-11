@@ -1036,11 +1036,7 @@ static int sep_say_font(lua_State *L)
 								SDL_SetAlpha(textsurface, SDL_SRCALPHA | SDL_RLEACCEL, 0);
 							}
 
-//							SDL_SaveBMP(textsurface, "nukeme.bmp");
-
 							SDL_BlitSurface(textsurface, NULL, g_se_surface, &dest);
-
-//							SDL_SaveBMP(g_se_surface, "nukeme2.bmp");
 
 							SDL_FreeSurface(textsurface);
 						}
@@ -1058,8 +1054,6 @@ static int sep_screenshot(lua_State *L)
     g_pSingeIn->request_screenshot();
   }
 	
-	//SDL_SaveBMP(g_se_surface, "/Users/scott/source/daphne/singe/g_se_surface.bmp");
-
   return 0;
 }
 
@@ -1810,5 +1804,4 @@ static int sep_mouse_set_mode(lua_State *L)
 	return 1;
 
 }
-		
-	
+

@@ -91,8 +91,6 @@ typedef struct
     Uint32 scrollrighttick;
 } Mouse;
 
-static Mouse mice[MAX_MICE];
-
 
 /////
 

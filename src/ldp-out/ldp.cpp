@@ -251,7 +251,6 @@ bool ldp::pre_search(const char* pszFrame, bool block_until_search_finishes)
 		|| (g_game->get_game_type() == GAME_DLE2)
 		|| (g_game->get_game_type() == GAME_ACE))
 	{
-		Uint8 *cpumem = NULL; //get_cpu_mem(0);	// get the memory for the first (and only)
 		outstr(" - ");
 //		print_board_info(cpumem[0xA00E], cpumem[0xA00F], cpumem[Z80_GET_IY]);
 	}

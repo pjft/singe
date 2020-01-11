@@ -180,7 +180,7 @@ void UpdateConsole()
 void DrawConsole()
 {
 	int loop;
-	SDL_Rect DestRect = {0, 0, ConsoleSurface->w, ConsoleSurface->h};
+	SDL_Rect DestRect = {0, 0, (short unsigned int)ConsoleSurface->w, (short unsigned int)ConsoleSurface->h};
 	
 
 	SDL_BlitSurface(ConsoleSurface, NULL, OutputScreen, &DestRect);

@@ -575,7 +575,6 @@ void vid_srf2tex(SDL_Surface *srf, GLuint uTexID)
 void vid_blit(SDL_Surface *srf, int x, int y)
 {
 //	if (g_ldp->is_blitting_allowed()) rdg
-	int result = 0;
 	{
 		if (!g_bUseOpenGL)
 		{
@@ -584,7 +583,7 @@ void vid_blit(SDL_Surface *srf, int x, int y)
 			dest.y = (short) y;
 			dest.w = (unsigned short) srf->w;
 			dest.h = (unsigned short) srf->h;
-			result = SDL_BlitSurface(srf, NULL, g_screen, &dest);
+			SDL_BlitSurface(srf, NULL, g_screen, &dest);
 		}
 
 		// else, OpenGL mode for blitting ...
@@ -635,7 +634,6 @@ bool load_bmps()
 
 	bool result = true;	// assume success unless we hear otherwise
 	int index = 0;
-	char filename[81];
 /*
 	for (; index < LED_RANGE; index++)
 	{

@@ -46,7 +46,7 @@ void mpo_test()
 	{
 		int i = 0;
 		int b;
-		
+		b = b + 0;
 		b = 5 / i;	// force crash
 	}
 }

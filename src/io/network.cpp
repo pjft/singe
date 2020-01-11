@@ -145,12 +145,12 @@ struct net_packet g_packet;	// what we're gonna send
 
 void net_set_gamename(char *gamename)
 {
-	strncpy(g_packet.gamename, gamename, sizeof(g_packet.gamename));
+	strncpy(g_packet.gamename, gamename, sizeof(g_packet.gamename) -1);
 }
 
 void net_set_ldpname(char *ldpname)
 {
-	strncpy(g_packet.ldpname, ldpname, sizeof(g_packet.ldpname));
+	strncpy(g_packet.ldpname, ldpname, sizeof(g_packet.ldpname) -1);
 }
 
 #ifdef WIN32
@@ -168,22 +168,21 @@ unsigned int get_cpu_mhz()
 	unsigned int result = 0;
 	unsigned int mod = 0;
 #ifdef LINUX
-#ifdef NATIVE_CPU_X86
+#ifdef NATIVE_CPU_MIPS
+	result = 294;	// assume playstation 2 for now :)
+#else
 	FILE *F;
 	double mhz;
-	int iRes = 0;
-	const char *s = "cat /proc/cpuinfo | grep MHz | sed -e 's/^.*: //'";
+	const char *s = "cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
 	F = popen(s, "r");
 	if (F)
 	{
-		iRes = fscanf(F, "%lf", &mhz);
+		fscanf(F, "%lf", &mhz);
 		pclose(F);
+		mhz = (mhz / 1000);
 	}
 	result = (unsigned int) mhz;
-#endif // NATIVE_CPU_X86
-#ifdef NATIVE_CPU_MIPS
-	result = 294;	// assume playstation 2 for now :)
-#endif // NATIVE_CPU_MIPS
+#endif
 #endif // LINUX
 
 #ifdef FREEBSD
@@ -235,23 +234,36 @@ unsigned int get_sys_mem()
 	unsigned int mod = 0;
 	unsigned int mem = 0;
 #ifdef LINUX
-	FILE *F;
-	int iRes = 0;
-	const char *s = "ls -l /proc/kcore | awk '{print $5}'";
-	F = popen(s, "r");
-	if (F)
-	{
-		iRes = fscanf(F, "%u", &mem);	// this breaks if they have over 2 gigs of ram :)
-		pclose(F);
-	}
+        FILE *meminfo = fopen("/proc/meminfo", "r");
 
+        if(meminfo == NULL)
+                return 0;
+
+        char line[256];
+        while(fgets(line, sizeof(line), meminfo))
+        {
+                int ram;
+                if(sscanf(line, "MemTotal: %d kB", &ram) == 1)
+                {
+                        mem = ram;
+                }
+        }
+        fclose(meminfo);
+
+#ifdef __ARM_ARCH_6__
+        result = (mem / 1024);
+#else
+        result = ((mem / 1024) + 32);
+	mod = result % 64;
+	result -= mod;
 #endif
+	return result;
+#endif // LINUX
 
 #ifdef FREEBSD
 	size_t len;
 	len = sizeof(mem);
 	sysctlbyname("hw.physmem", &mem, &len, NULL, NULL);
-	
 #endif
 
 #ifdef WIN32
@@ -272,10 +284,22 @@ char *get_video_description()
 	static char result[NET_LONGSTRSIZE] = { "Unknown video" };
 
 #ifdef LINUX
-#ifdef NATIVE_CPU_X86
+#ifdef __ARM_ARCH_6__
+        FILE *F;
+        char video[64];
+        const char *s = "cat /proc/cpuinfo | grep Hardware | sed -e 's/^.*: //' | head -1";
+        F = popen(s, "r");
+        if (F)
+        {
+                fscanf(F, "%s", video);
+                pclose(F);
+        }
+        strcpy(result, video);
+#elif NATIVE_CPU_MIPS
+	strcpy(result, "Playstation2");	// assume PS2 for now hehe
+#else
 	FILE *F;
-	// PCI query fix by Arnaud G. Gibert
-	const char *s = "lspci | grep -i \"VGA compatible controller\" | awk -F ': ' '{print $2}'";
+	const char *s = "lspci | grep -i \"VGA compatible controller\" | awk -F ': ' '{print $2}' | head -1";
 	F = popen(s, "r");
 	if (F)
 	{
@@ -283,10 +307,7 @@ char *get_video_description()
 		if (len > 1) result[len-1] = 0;	// make sure string is null terminated
 		pclose(F);
 	}
-#endif	// NATIVE_CPU_X86
-#ifdef NATIVE_CPU_MIPS
-	strcpy(result, "Playstation2");	// assume PS2 for now hehe
-#endif // MIPS
+#endif
 #endif
 
 #ifdef FREEBSD
@@ -360,6 +381,20 @@ char *get_cpu_name()
 	static char result[NET_LONGSTRSIZE] = { 0 };
 	strcpy(result, "UnknownCPU");	// default ...
 
+#ifdef LINUX
+
+	FILE *F;
+	char cpu[64];
+	const char *s = "cat /proc/cpuinfo | grep 'model name' | sed -e 's/^.*: //' | head -1";
+	F = popen(s, "r");
+	if (F)
+	{
+		fscanf(F, "%s", cpu);
+		pclose(F);
+	}
+	strcpy(result, cpu);
+#endif
+
 #ifdef NATIVE_CPU_X86
 	unsigned int reg_ebx, reg_ecx, reg_edx;
 #ifdef WIN32
@@ -371,16 +406,6 @@ char *get_cpu_name()
 		mov reg_ecx, ecx
 		mov reg_edx, edx
 	}
-#else
-    asm
-    (
-    	"xor %%eax, %%eax\n\t"
-    	"cpuid\n\t"
-		: "=b" (reg_ebx), "=c" (reg_ecx), "=d" (reg_edx)
-		: /* no inputs */
-		: "cc", "eax"	/* a is clobbered upon completion */
-	);
-#endif
 
 	result[0] = (char) ((reg_ebx) & 0xFF);
 	result[1] = (char) ((reg_ebx >> 8) & 0xFF);
@@ -396,6 +421,7 @@ char *get_cpu_name()
 	result[9] = (char) ((reg_ecx >> 8) & 0xFF);
 	result[10] = (char) ((reg_ecx >> 16) & 0xFF);
 	result[11] = (char) ((reg_ecx >> 24) & 0xFF);
+#endif
 #endif // NATIVE_CPU_X86
 
 #ifdef NATIVE_CPU_MIPS
@@ -613,13 +639,13 @@ void net_send_data_to_server()
 					printerror("your OS is unknown in network.cpp, please fix this");
 				}
 
-				strncpy(g_packet.os_desc, get_os_description(), sizeof(g_packet.os_desc));
+				strncpy(g_packet.os_desc, get_os_description(), sizeof(g_packet.os_desc) -1);
 				g_packet.protocol = PROTOCOL_VERSION;
 				g_packet.mhz = get_cpu_mhz();
 				g_packet.mem = get_sys_mem();
-				strncpy(g_packet.video_desc, get_video_description(), sizeof(g_packet.video_desc));
-				strncpy(g_packet.cpu_name, get_cpu_name(), sizeof(g_packet.cpu_name));
-				strncpy(g_packet.daphne_version, get_daphne_version(), sizeof(g_packet.daphne_version));
+				strncpy(g_packet.video_desc, get_video_description(), sizeof(g_packet.video_desc) -1);
+				strncpy(g_packet.cpu_name, get_cpu_name(), sizeof(g_packet.cpu_name) -1);
+				strncpy(g_packet.daphne_version, get_daphne_version(), sizeof(g_packet.daphne_version) -1);
 
 				// now compute CRC32 of the rest of the packet
 				g_packet.crc32 = crc32(0L, Z_NULL, 0);
