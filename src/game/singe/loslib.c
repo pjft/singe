@@ -73,7 +73,7 @@ static int os_getenv (lua_State *L) {
 
 static int os_clock (lua_State *L) {
 #ifdef __x86_64__
-  lua_pushnumber(L, (((lua_Number)clock())/(lua_Number)CLOCKS_PER_SEC)*6);
+  lua_pushnumber(L, (((lua_Number)clock())/(lua_Number)CLOCKS_PER_SEC)*LUA_64BIT_CLOCK_SKEW);
 #else
   lua_pushnumber(L, ((lua_Number)clock())/(lua_Number)CLOCKS_PER_SEC);
 #endif
