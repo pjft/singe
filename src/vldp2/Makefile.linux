@@ -13,7 +13,7 @@ CC = gcc
 #DFLAGS = -O3 -march=i686 -fomit-frame-pointer -funroll-loops -DVLDP_BENCHMARK 
 
 # Standard version 
-DFLAGS = -O3 -fexpensive-optimizations -funroll-loops -fPIC
+DFLAGS = -O3 -fexpensive-optimizations -funroll-loops -fPIC -Wno-attributes
 
 CFLAGS = ${DFLAGS} `sdl-config --cflags` -I./include 
 LIBS = `sdl-config --libs` 

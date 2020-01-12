@@ -249,7 +249,7 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-static void finalize_sequence (sequence_t * sequence)
+static inline void finalize_sequence (sequence_t * sequence)
 {
     int width;
     int height;

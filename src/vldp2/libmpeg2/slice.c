@@ -45,7 +45,7 @@ static int non_linear_quantizer_scale [] = {
     56, 64, 72, 80, 88, 96, 104, 112
 };
 
-static int get_macroblock_modes (decoder_t * const decoder)
+static inline int get_macroblock_modes (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -138,7 +138,7 @@ static int get_macroblock_modes (decoder_t * const decoder)
 #undef bit_ptr
 }
 
-static int get_quantizer_scale (decoder_t * const decoder)
+static inline int get_quantizer_scale (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -158,7 +158,7 @@ static int get_quantizer_scale (decoder_t * const decoder)
 #undef bit_ptr
 }
 
-static int get_motion_delta (decoder_t * const decoder,
+static inline int get_motion_delta (decoder_t * const decoder,
 				    const int f_code)
 {
 #define bit_buf (decoder->bitstream_buf)
@@ -212,7 +212,7 @@ static int get_motion_delta (decoder_t * const decoder,
 #undef bit_ptr
 }
 
-static int bound_motion_vector (const int vector, const int f_code)
+static inline int bound_motion_vector (const int vector, const int f_code)
 {
 #if 0
     unsigned int limit;
@@ -231,7 +231,7 @@ static int bound_motion_vector (const int vector, const int f_code)
 #endif
 }
 
-static int get_dmv (decoder_t * const decoder)
+static inline int get_dmv (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -247,7 +247,7 @@ static int get_dmv (decoder_t * const decoder)
 #undef bit_ptr
 }
 
-static int get_coded_block_pattern (decoder_t * const decoder)
+static inline int get_coded_block_pattern (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -275,7 +275,7 @@ static int get_coded_block_pattern (decoder_t * const decoder)
 #undef bit_ptr
 }
 
-static int get_luma_dc_dct_diff (decoder_t * const decoder)
+static inline int get_luma_dc_dct_diff (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -312,7 +312,7 @@ static int get_luma_dc_dct_diff (decoder_t * const decoder)
 #undef bit_ptr
 }
 
-static int get_chroma_dc_dct_diff (decoder_t * const decoder)
+static inline int get_chroma_dc_dct_diff (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -955,7 +955,7 @@ static int get_mpeg1_non_intra_block (decoder_t * const decoder)
     return i;
 }
 
-static void slice_intra_DCT (decoder_t * const decoder, const int cc,
+static inline void slice_intra_DCT (decoder_t * const decoder, const int cc,
 				    uint8_t * const dest, const int stride)
 {
 #define bit_buf (decoder->bitstream_buf)
@@ -983,7 +983,7 @@ static void slice_intra_DCT (decoder_t * const decoder, const int cc,
 #undef bit_ptr
 }
 
-static void slice_non_intra_DCT (decoder_t * const decoder,
+static inline void slice_non_intra_DCT (decoder_t * const decoder,
 					uint8_t * const dest, const int stride)
 {
     int last;
@@ -1212,7 +1212,7 @@ static void motion_fr_dmv (decoder_t * const decoder, motion_t * const motion,
 #undef bit_ptr
 }
 
-static void motion_reuse (const decoder_t * const decoder,
+static inline void motion_reuse (const decoder_t * const decoder,
 				 const motion_t * const motion,
 				 mpeg2_mc_fct * const * const table)
 {
@@ -1225,7 +1225,7 @@ static void motion_reuse (const decoder_t * const decoder,
     MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
-static void motion_zero (const decoder_t * const decoder,
+static inline void motion_zero (const decoder_t * const decoder,
 				const motion_t * const motion,
 				mpeg2_mc_fct * const * const table)
 {
@@ -1496,7 +1496,7 @@ void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
     decoder->limit_y = height - 16;
 }
 
-static int slice_init (decoder_t * const decoder, int code)
+static inline int slice_init (decoder_t * const decoder, int code)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
