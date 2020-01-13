@@ -83,6 +83,10 @@ https://github.com/DirtBagXon/singe/blob/master/ACTIONMAX.md
 
 https://github.com/DavidGriffith/daphne
 
+### GUI frontend
+
+A **very simple** GTK frontend GUI: https://github.com/DirtBagXon/ldfrontend
+
 ### Run games
 
      ./run.sh timegal
@@ -92,3 +96,5 @@ https://github.com/DavidGriffith/daphne
 ![timegal](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/timegal.png) 
 ![starblazers](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/starblazers.png) 
 ![popsghostly](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/popsghostly.png) 
+![singelauncher](https://raw.githubusercontent.com/DirtBagXon/ldfrontend/master/screenshots/singelauncher.png) 
+
