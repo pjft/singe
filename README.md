@@ -93,8 +93,4 @@ A **very simple** GTK frontend GUI: https://github.com/DirtBagXon/ldfrontend
      ./actionmax.sh popsghostly
 
 
-![timegal](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/timegal.png) 
-![starblazers](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/starblazers.png) 
-![popsghostly](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/popsghostly.png) 
-![singelauncher](https://raw.githubusercontent.com/DirtBagXon/ldfrontend/master/screenshots/singelauncher.png) 
-
+Screenshot images are within the `screenshot` directory.
