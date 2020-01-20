@@ -85,12 +85,15 @@ https://github.com/DavidGriffith/daphne
 
 ### GUI frontend
 
-A **very simple** GTK frontend GUI: https://github.com/DirtBagXon/ldfrontend
+A simplified GTK `DapnheLoader` clone frontend: https://github.com/DirtBagXon/ldfrontend
 
-### Run games
+![singeloader](https://raw.githubusercontent.com/DirtBagXon/singe/master/screenshots/singelauncher.png)
+
+### CLI run games
 
      ./run.sh timegal
      ./actionmax.sh popsghostly
 
 
-Screenshot images are within the `screenshot` directory.
+More screenshots within the `screenshots` directory.
+
