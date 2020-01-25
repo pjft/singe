@@ -1,9 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
 SCRIPT_DIR=`dirname "$0"`
 if realpath / >/dev/null; then SCRIPT_DIR=$(realpath "$SCRIPT_DIR"); fi
 SINGE_BIN=singe.bin
 DAPHNE_SHARE=~/.daphne
+
+function STDERR () {
+	/bin/cat - 1>&2
+}
 
 echo "Singe Launcher : Script dir is $SCRIPT_DIR"
 cd "$SCRIPT_DIR"
@@ -17,9 +21,9 @@ if [ "$1" = "-fullscreen" ]; then
 fi
 
 if [ -z $1 ] ; then
-	echo "Specify a game to try: "
+	echo "Specify a game to try: " | STDERR
 	echo
-	echo "\t$0 [-fullscreen] <gamename>"
+	echo "$0 [-fullscreen] <gamename>" | STDERR
 	echo
 
         echo "Games available: "
@@ -28,15 +32,15 @@ if [ -z $1 ] ; then
 			installed="$installed $game"
 		fi
         done
-        echo "$installed" | fold -s -w60 | sed 's/^ //; s/^/\t/'
+        echo "$installed" | fold -s -w60 | sed 's/^ //; s/^/\t/' | STDERR
 	echo
-	exit
+	exit 1
 fi
 
 if [ ! -f $DAPHNE_SHARE/singe/$1/$1.singe ] || [ ! -f $DAPHNE_SHARE/singe/$1/$1.txt ]; then
         echo 
-        echo "Missing file: $DAPHNE_SHARE/singe/$1/$1.singe ?"
-        echo "              $DAPHNE_SHARE/singe/$1/$1.txt ?"
+        echo "Missing file: $DAPHNE_SHARE/singe/$1/$1.singe ?" | STDERR
+        echo "              $DAPHNE_SHARE/singe/$1/$1.txt ?" | STDERR
         echo 
         exit 1
 fi
@@ -60,11 +64,12 @@ EXIT_CODE=$?
 if [ "$EXIT_CODE" -ne "0" ] ; then
 	if [ "$EXIT_CODE" -eq "127" ]; then
 		echo ""
-		echo "SINGE failed to start."
-		echo "This is probably due to a library problem."
-		echo "Run ./singe.bin directly to see which libraries are missing."
+		echo "SINGE failed to start." | STDERR
+		echo "This is probably due to a library problem." | STDERR
+		echo "Run ./singe.bin directly to see which libraries are missing." | STDERR
 		echo ""
 	else
-		echo "Loader failed with an unknown exit code : $EXIT_CODE."
+		echo "Loader failed with an unknown exit code : $EXIT_CODE." | STDERR
 	fi
+	exit $EXIT_CODE
 fi
