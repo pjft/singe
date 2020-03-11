@@ -1266,7 +1266,7 @@ bool ldp_vldp::read_frame_conversions()
 						sizeof(m_mpeginfo) / sizeof(struct fileframes),
 						err_msg))
 					{
-						outstr("Framefile parse succeeded. Video/Audio directory is: ");
+						outstr("Framefile parse succeeded.\nVideo/Audio directory is: ");
 						printline(m_mpeg_path.c_str());
 						result = true;
 					}

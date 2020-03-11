@@ -324,8 +324,10 @@ int load_waves()
 	// load "saveme" sound in
 	if (!SDL_LoadWAV("sound/grumble.wav", &spec, &g_sample_saveme.pu8Buf, &g_sample_saveme.uLength))
 	{
-		printline("Loading 'grumble.wav' failed...");
-		result = 0;
+		free_waves();
+		sound_shutdown();
+		fprintf(stderr, "Loading 'grumble.wav' failed, please install wav file...\n");
+		exit(126);
 	}
 
 	// if something went wrong, eject ...

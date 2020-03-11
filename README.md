@@ -54,6 +54,10 @@ This corrects an _overlay misalignment_ and checks for another _out-of-bounds se
      make
      cd ..
      mkdir -p ~/.daphne/singe
+     cp sound/grumble.wav ~/.daphne/sound/
+
+### On a fresh install, add all sounds and images
+
      cp -a pics sound ~/.daphne/
 
 ### Install precompiled binaries
