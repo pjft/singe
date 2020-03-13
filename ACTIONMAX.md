@@ -55,3 +55,47 @@ Use below folder structure with provided `actionmax.sh` script:
      .daphne/singe/actionmax/video_menu.m2v
      .daphne/singe/actionmax/video_menu.ogg
 
+
+Use the following framefiles to accomodate these changes:
+
+
+**38ambushalley/frame_38ambushalley.txt**
+
+    .
+    
+    1       ../video_actionmaxintro.m2v
+    355     video_38ambushalley.m2v
+    28175   ../video_menu.m2v
+
+**bluethunder/frame_bluethunder.txt**
+
+    .
+    
+    1       ../video_actionmaxintro.m2v
+    355     video_bluethunder.m2v
+    27950   ../video_menu.m2v
+
+**hydrosub2021/frame_hydrosub2021.txt**
+
+    .
+    
+    1       ../video_actionmaxintro.m2v
+    355     video_hydrosub2021.m2v
+    28820   ../video_menu.m2v
+
+**popsghostly/frame_popsghostly.txt**
+
+    .
+    
+    1       ../video_actionmaxintro.m2v
+    355     video_popsghostly.m2v
+    31835   ../video_menu.m2v
+
+**sonicfury/frame_sonicfury.txt**
+
+    .
+    
+    1       ../video_actionmaxintro.m2v
+    355     video_sonicfury.m2v
+    26645   ../video_menu.m2v
+
