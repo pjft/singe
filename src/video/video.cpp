@@ -653,7 +653,7 @@ bool load_bmps()
 	g_other_bmps[B_DL_LIVES] = load_one_bmp("pics/lives.bmp");
 	g_other_bmps[B_DL_CREDITS] = load_one_bmp("pics/credits.bmp");
 */
-	g_other_bmps[B_DAPHNE_SAVEME] = load_one_bmp("pics/saveme.bmp");
+	g_other_bmps[B_DAPHNE_SAVEME] = load_one_bmp("pics/singeme.bmp");
 	g_other_bmps[B_GAMENOWOOK] = load_one_bmp("pics/gamenowook.bmp");
 /*
     if (sboverlay_characterset != 2)
