@@ -112,7 +112,7 @@ Use the following framefile contents:
 bluethunder/bluethunder.singe, sonicfury/sonicfury.singe and \
 hydrosub2021/hydrosub2021.singe
 
-	-dofile("singe/actionmax/Emulator.singe")
+	-dofile("singe/ActionMax/Emulator.singe")
 	+dofile("singe/actionmax/emulator.singe")
 
 

@@ -19,6 +19,24 @@ https://github.com/DirtBagXon/singe/blob/master/patches/singe_1.18.diff
 
 https://github.com/DirtBagXon/singe/blob/master/CHANGELOG.md
 
+### Time Gal and Ninja Hayate Issues
+
+Nearly all the issues I have seen in using this repo are based on the games **Time Gal** and **Ninja Hayate**. \
+These games have issues due to the original `.singe` files being **compiled** 32bit LUA bytecode.
+
+You will need to download and use replacement bytecode files with this repository to run these games. \
+The changes are minimal and are documented, along with the replacement files, in the bytecode folder of this repo:
+
+https://github.com/DirtBagXon/singe/tree/master/bytecode
+
+Install them thus:
+
+    mv ~/.daphne/singe/timegal/timegal.singe ~/.daphne/singe/timegal/timegal.singe.old
+    mv ~/.daphne/singe/hayate/hayate.singe ~/.daphne/singe/hayate/hayate.singe.old
+
+    cp bytecode/timegal.singe ~/.daphne/singe/timegal/timegal.singe
+    cp bytecode/hayate.singe ~/.daphne/singe/hayate/hayate.singe
+
 ### Local changes
 
 * Patched to allow 64bit system reading of 32bit Lua bytecode supplied with *Time Gal* and *Ninja Hayate*. \
